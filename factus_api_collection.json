@@ -1,0 +1,437 @@
+{
+    "info": {
+        "_postman_id": "factus-api-v1",
+        "name": "Factus API v1",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Local Auth",
+            "item": [
+                {
+                    "name": "1. Local Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.collectionVariables.set(\"local_jwt\", jsonData.access_token);"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "username",
+                                    "value": "admin",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "password",
+                                    "value": "admin123",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["auth", "login"]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Factus Auth (Protected)",
+            "item": [
+                {
+                    "name": "2. Factus Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.collectionVariables.set(\"factus_token\", jsonData.data.access_token);",
+                                    "pm.collectionVariables.set(\"factus_refresh_token\", jsonData.data.refresh_token);"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"tu_email@factus.com\",\n    \"password\": \"tu_password\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/factus/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["auth", "factus", "login"]
+                        }
+                    }
+                },
+                {
+                    "name": "3. Factus Refresh Token",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "pm.collectionVariables.set(\"factus_token\", jsonData.data.access_token);"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"refresh_token\": \"{{factus_refresh_token}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/factus/refresh",
+                            "host": ["{{base_url}}"],
+                            "path": ["auth", "factus", "refresh"]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Lookups",
+            "item": [
+                {
+                    "name": "Get Numbering Ranges",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/lookups/numbering-ranges",
+                            "host": ["{{base_url}}"],
+                            "path": ["lookups", "numbering-ranges"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Municipalities",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/lookups/municipalities",
+                            "host": ["{{base_url}}"],
+                            "path": ["lookups", "municipalities"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Taxes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/lookups/taxes",
+                            "host": ["{{base_url}}"],
+                            "path": ["lookups", "taxes"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Units of Measure",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/lookups/units",
+                            "host": ["{{base_url}}"],
+                            "path": ["lookups", "units"]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Invoices",
+            "item": [
+                {
+                    "name": "Create Invoice",
+                    "event": [
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "exec": [
+                                    "var ts = Date.now();",
+                                    "var ref = 'FAC-' + ts;",
+                                    "pm.collectionVariables.set('reference_code', ref);",
+                                    "var body = JSON.parse(pm.request.body.raw);",
+                                    "body.reference_code = ref;",
+                                    "pm.request.body.update(JSON.stringify(body));"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        },
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData.success && jsonData.data) {",
+                                    "    pm.collectionVariables.set('invoice_number', jsonData.data.number);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"document\": \"01\",\n    \"numbering_range_id\": 8,\n    \"reference_code\": \"FAC-001\",\n    \"observation\": \"Prueba de factura\",\n    \"payment_method_code\": \"10\",\n    \"payment_form\": \"1\",\n    \"customer\": {\n        \"identification_document_id\": 3,\n        \"identification\": \"123456789\",\n        \"names\": \"Juan Perez\",\n        \"address\": \"Calle 123\",\n        \"email\": \"juan@example.com\",\n        \"phone\": \"3001234567\",\n        \"municipality_id\": 980,\n        \"legal_organization_id\": 2,\n        \"tribute_id\": 21\n    },\n    \"items\": [\n        {\n            \"code_reference\": \"PROD-001\",\n            \"name\": \"Producto de prueba\",\n            \"quantity\": 1,\n            \"price\": \"10000.00\",\n            \"discount_rate\": \"0.00\",\n            \"tax_rate\": \"19.00\",\n            \"unit_measure_id\": 70,\n            \"standard_code_id\": 1,\n            \"is_excluded\": 0,\n            \"tribute_id\": 1\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/invoices/",
+                            "host": ["{{base_url}}"],
+                            "path": ["invoices", ""]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Invoice",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/invoices/{{invoice_number}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["invoices", "{{invoice_number}}"]
+                        }
+                    }
+                },
+                {
+                    "name": "Download PDF",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/invoices/{{invoice_number}}/pdf",
+                            "host": ["{{base_url}}"],
+                            "path": ["invoices", "{{invoice_number}}", "pdf"]
+                        }
+                    }
+                },
+                {
+                    "name": "Download XML",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/invoices/{{invoice_number}}/xml",
+                            "host": ["{{base_url}}"],
+                            "path": ["invoices", "{{invoice_number}}", "xml"]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Invoice Events",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/invoices/{{invoice_number}}/events",
+                            "host": ["{{base_url}}"],
+                            "path": ["invoices", "{{invoice_number}}", "events"]
+                        }
+                    }
+                },
+                {
+                    "name": "Send Invoice by Email",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"destinatario@example.com\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/invoices/{{invoice_number}}/send-email",
+                            "host": ["{{base_url}}"],
+                            "path": ["invoices", "{{invoice_number}}", "send-email"]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Invoice (Unvalidated)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/invoices/reference/{{reference_code}}",
+                            "host": ["{{base_url}}"],
+                            "path": ["invoices", "reference", "{{reference_code}}"]
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{local_jwt}}",
+                "type": "string"
+            }
+        ]
+    },
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [""]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [""]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000/api/v1",
+            "type": "string"
+        },
+        {
+            "key": "local_jwt",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "factus_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "factus_refresh_token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "invoice_number",
+            "value": "SETP9900002964",
+            "type": "string"
+        },
+        {
+            "key": "reference_code",
+            "value": "FAC-001",
+            "type": "string"
+        }
+    ]
+}
