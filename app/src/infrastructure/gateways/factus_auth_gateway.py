@@ -1,6 +1,7 @@
 import httpx
 from app.src.domain.interfaces.auth_gateway import IAuthGateway
 from app.src.domain.models.auth_token import AuthToken
+from app.src.domain.exceptions import FactusAPIError
 from app.src.core.config import settings
 
 class FactusAuthGateway(IAuthGateway):
@@ -21,8 +22,13 @@ class FactusAuthGateway(IAuthGateway):
         except Exception:
             return response.text or f"HTTP {response.status_code}"
 
+    def _status_code(self, response: httpx.Response) -> int:
+        if response.status_code >= 500:
+            return 502
+        return response.status_code
+
     async def authenticate(self, email: str, password: str) -> AuthToken:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{self.base_url}/oauth/token",
                 data={
@@ -36,7 +42,10 @@ class FactusAuthGateway(IAuthGateway):
             )
 
         if not response.is_success:
-            raise Exception(self._parse_error(response, "Error de autenticación con Factus"))
+            raise FactusAPIError(
+                self._parse_error(response, "Error de autenticación con Factus"),
+                status_code=self._status_code(response)
+            )
 
         data = response.json()
         return AuthToken(
@@ -47,7 +56,7 @@ class FactusAuthGateway(IAuthGateway):
         )
 
     async def refresh_token(self, refresh_token: str) -> AuthToken:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{self.base_url}/oauth/token",
                 data={
@@ -60,7 +69,10 @@ class FactusAuthGateway(IAuthGateway):
             )
 
         if not response.is_success:
-            raise Exception(self._parse_error(response, "Error al refrescar el token de Factus"))
+            raise FactusAPIError(
+                self._parse_error(response, "Error al refrescar el token de Factus"),
+                status_code=self._status_code(response)
+            )
 
         data = response.json()
         return AuthToken(

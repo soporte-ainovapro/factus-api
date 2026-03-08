@@ -2,6 +2,7 @@ import httpx
 import logging
 from typing import Any, Dict
 from app.src.domain.interfaces.invoice_gateway import IInvoiceGateway
+from app.src.domain.exceptions import FactusAPIError
 
 logger = logging.getLogger(__name__)
 from app.src.domain.models.invoice import (
@@ -18,7 +19,7 @@ class FactusInvoiceGateway(IInvoiceGateway):
         Extract a human-readable error message from a Factus error response.
 
         Factus uses two different error shapes:
-        - 422 Validation: {"message": "...", "errors": {"field": ["msg", ...]}}
+        - 422 Validation: {"message": "...", "data": {"errors": {"field": ["msg", ...]}}}
         - 409 Conflict:   {"status": "Conflict", "errors": [{"message": "...", ...}]}
         """
         try:
@@ -26,18 +27,29 @@ class FactusInvoiceGateway(IInvoiceGateway):
         except Exception:
             return response.text or f"HTTP {response.status_code}"
 
-        errors = data.get("errors")
         top_message = data.get("message", "")
 
-        # 422-style: errors is a dict of field -> [messages]
+        def _fmt_dict_errors(d: dict) -> str:
+            parts = []
+            for field, msgs in d.items():
+                if isinstance(msgs, list):
+                    parts.append(f"{field}: {', '.join(msgs)}")
+                else:
+                    # msgs is a plain string (e.g. Factus FAK24 rule messages)
+                    parts.append(str(msgs))
+            return "; ".join(parts)
+
+        # 422-style: errors nested under data.errors (dict of field -> str|[messages])
+        nested_errors = data.get("data", {}).get("errors") if isinstance(data.get("data"), dict) else None
+        if isinstance(nested_errors, dict) and nested_errors:
+            field_errors = _fmt_dict_errors(nested_errors)
+            return f"{top_message} — {field_errors}" if top_message else field_errors
+
+        # 422-style: errors at top level (dict of field -> str|[messages])
+        errors = data.get("errors")
         if isinstance(errors, dict) and errors:
-            field_errors = "; ".join(
-                f"{field}: {', '.join(msgs)}"
-                for field, msgs in errors.items()
-            )
-            if top_message:
-                return f"{top_message} — {field_errors}"
-            return field_errors
+            field_errors = _fmt_dict_errors(errors)
+            return f"{top_message} — {field_errors}" if top_message else field_errors
 
         # 409-style: errors is a list of objects with a "message" key
         if isinstance(errors, list) and errors:
@@ -45,8 +57,12 @@ class FactusInvoiceGateway(IInvoiceGateway):
             if messages:
                 return "; ".join(messages)
 
-        # Fallback to top-level message or default
         return top_message or default
+
+    def _status_code(self, response: httpx.Response) -> int:
+        if response.status_code >= 500:
+            return 502
+        return response.status_code
 
     async def create_invoice(self, invoice: Invoice, token: str) -> InvoiceResponse:
 
@@ -110,6 +126,16 @@ class FactusInvoiceGateway(IInvoiceGateway):
             ]
 
         # Customer
+        # identification_document_id=6 es NIT y requiere DV obligatorio (regla FAK24)
+        NIT_DOC_ID = 6
+        if (
+            invoice.customer.identification_document_id == NIT_DOC_ID
+            and not invoice.customer.dv
+        ):
+            raise Exception(
+                "El cliente con NIT debe tener el dígito de verificación (DV) configurado"
+            )
+
         customer = {
             "identification_document_id": invoice.customer.identification_document_id,
             "identification": invoice.customer.identification,
@@ -117,7 +143,8 @@ class FactusInvoiceGateway(IInvoiceGateway):
             "tribute_id": invoice.customer.tribute_id
         }
 
-        if invoice.customer.names: customer["names"] = invoice.customer.names
+        # names siempre debe ser string; Factus lo rechaza si es null
+        customer["names"] = invoice.customer.names or invoice.customer.company or ""
         if invoice.customer.address: customer["address"] = invoice.customer.address
         if invoice.customer.email: customer["email"] = invoice.customer.email
         if invoice.customer.phone: customer["phone"] = invoice.customer.phone
@@ -177,7 +204,7 @@ class FactusInvoiceGateway(IInvoiceGateway):
                 response.text,
                 payload,
             )
-            raise Exception(self._parse_error(response, "Error al validar la factura"))
+            raise FactusAPIError(self._parse_error(response, "Error al validar la factura"), status_code=self._status_code(response))
 
         response_json = response.json()
         data = response_json.get("data", {})
@@ -194,7 +221,7 @@ class FactusInvoiceGateway(IInvoiceGateway):
         )
 
     async def _download(self, endpoint: str, number: str, token: str, extension: str) -> DownloadResponse:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
                 f"{self.base_url}/{endpoint}/{number}",
                 headers={
@@ -204,7 +231,7 @@ class FactusInvoiceGateway(IInvoiceGateway):
             )
 
         if not response.is_success:
-            raise Exception(self._parse_error(response, "Error al descargar el archivo"))
+            raise FactusAPIError(self._parse_error(response, "Error al descargar el archivo"), status_code=self._status_code(response))
 
         data = response.json().get("data", {})
         file_content = data.get(f"{extension}_base_64_encoded", "")
@@ -231,7 +258,7 @@ class FactusInvoiceGateway(IInvoiceGateway):
             )
             
         if not response.is_success:
-            raise Exception(self._parse_error(response, "Error al obtener la factura"))
+            raise FactusAPIError(self._parse_error(response, "Error al obtener la factura"), status_code=self._status_code(response))
 
         response_json = response.json()
         return InvoiceDataResponse(**response_json)
@@ -247,7 +274,7 @@ class FactusInvoiceGateway(IInvoiceGateway):
             )
 
         if not response.is_success:
-            raise Exception(self._parse_error(response, "Error al eliminar la factura"))
+            raise FactusAPIError(self._parse_error(response, "Error al eliminar la factura"), status_code=self._status_code(response))
 
         return DeleteInvoiceResponse(**response.json())
 
@@ -267,7 +294,7 @@ class FactusInvoiceGateway(IInvoiceGateway):
             )
 
         if not response.is_success:
-            raise Exception(self._parse_error(response, "Error al enviar el correo"))
+            raise FactusAPIError(self._parse_error(response, "Error al enviar el correo"), status_code=self._status_code(response))
 
         return SendEmailResponse(**response.json())
 
@@ -282,6 +309,6 @@ class FactusInvoiceGateway(IInvoiceGateway):
             )
 
         if not response.is_success:
-            raise Exception(self._parse_error(response, "Error al obtener eventos de la factura"))
+            raise FactusAPIError(self._parse_error(response, "Error al obtener eventos de la factura"), status_code=self._status_code(response))
 
         return InvoiceEventsResponse(**response.json())

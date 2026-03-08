@@ -1,9 +1,10 @@
 import httpx
-from typing import List
+from typing import List, Optional
 from app.src.domain.interfaces.lookup_gateway import ILookupGateway
 from app.src.domain.models.lookup import (
-    Municipality, Unit, Tax, NumberingRange
+    Municipality, Unit, Tax, NumberingRange, Country, Acquirer
 )
+from app.src.domain.exceptions import FactusAPIError
 
 class FactusLookupGateway(ILookupGateway):
     def __init__(self, base_url: str):
@@ -28,7 +29,13 @@ class FactusLookupGateway(ILookupGateway):
                 params=params
             )
 
-            response.raise_for_status()
+            if not response.is_success:
+                status_code = 502 if response.status_code >= 500 else response.status_code
+                try:
+                    msg = response.json().get("message") or response.text
+                except Exception:
+                    msg = response.text
+                raise FactusAPIError(msg or f"HTTP {response.status_code}", status_code=status_code)
 
             json_response = response.json()
             data = json_response.get("data", [])
@@ -37,7 +44,42 @@ class FactusLookupGateway(ILookupGateway):
                 data = data["data"]
 
             if not isinstance(data, list):
-                raise Exception(f"Unexpected API structure: {data}")
+                raise FactusAPIError(f"Unexpected API structure: {data}", status_code=502)
+
+            return data
+
+    async def _get_object(
+        self,
+        endpoint: str,
+        token: str | None = None,
+        params: dict | None = None
+    ) -> dict:
+
+        headers = {"Accept": "application/json"}
+
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{self.base_url}/{endpoint}",
+                headers=headers,
+                params=params
+            )
+
+            if not response.is_success:
+                status_code = 502 if response.status_code >= 500 else response.status_code
+                try:
+                    msg = response.json().get("message") or response.text
+                except Exception:
+                    msg = response.text
+                raise FactusAPIError(msg or f"HTTP {response.status_code}", status_code=status_code)
+
+            json_response = response.json()
+            data = json_response.get("data", {})
+
+            if not isinstance(data, dict):
+                raise FactusAPIError(f"Unexpected API structure: {data}", status_code=502)
 
             return data
 
@@ -92,3 +134,37 @@ class FactusLookupGateway(ILookupGateway):
         )
 
         return [NumberingRange(**item) for item in data]
+
+    async def get_countries(
+        self,
+        token: str,
+        name: Optional[str] = None
+    ) -> List[Country]:
+
+        params = {"name": name} if name else None
+
+        data = await self._get(
+            "v1/countries",
+            token=token,
+            params=params
+        )
+
+        return [Country(**item) for item in data]
+
+    async def get_acquirer(
+        self,
+        token: str,
+        identification_document_id: int,
+        identification_number: str
+    ) -> Acquirer:
+
+        data = await self._get_object(
+            "v1/dian/acquirer",
+            token=token,
+            params={
+                "identification_document_id": identification_document_id,
+                "identification_number": identification_number
+            }
+        )
+
+        return Acquirer(**data)

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 from app.src.domain.models.lookup import (
-    Municipality, Tax, Unit, NumberingRange
+    Municipality, Tax, Unit, NumberingRange, Country, Acquirer
 )
 
 class ILookupGateway(ABC):
@@ -19,4 +19,17 @@ class ILookupGateway(ABC):
 
     @abstractmethod
     async def get_numbering_ranges(self, token: str) -> List[NumberingRange]:
+        pass
+
+    @abstractmethod
+    async def get_countries(self, token: str, name: Optional[str] = None) -> List[Country]:
+        pass
+
+    @abstractmethod
+    async def get_acquirer(
+        self,
+        token: str,
+        identification_document_id: int,
+        identification_number: str
+    ) -> Acquirer:
         pass

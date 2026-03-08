@@ -7,7 +7,8 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.src.infrastructure.gateways.factus_lookup_gateway import FactusLookupGateway
-from app.src.domain.models.lookup import Municipality, Tax, Unit, NumberingRange
+from app.src.domain.models.lookup import Municipality, Tax, Unit, NumberingRange, Country, Acquirer
+from app.src.domain.exceptions import FactusAPIError
 
 BASE_URL = "https://api-sandbox.factus.com.co"
 TOKEN = "fake-factus-token"
@@ -245,3 +246,127 @@ class TestGetNumberingRanges:
         assert nr.from_number == 1
         assert nr.to_number == 1000
         assert nr.is_active is True
+
+
+# ---------------------------------------------------------------------------
+# get_countries()
+# ---------------------------------------------------------------------------
+
+class TestGetCountries:
+    @pytest.mark.asyncio
+    async def test_returns_list_of_countries(self):
+        gateway = make_gateway()
+        api_data = [
+            {"id": 1, "code": "CO", "name": "Colombia"},
+            {"id": 2, "code": "US", "name": "United States"},
+        ]
+        fake_resp = mock_response(200, {"data": api_data})
+
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=fake_resp)
+        mock_async_ctx = MagicMock()
+        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+            result = await gateway.get_countries(TOKEN)
+
+        assert len(result) == 2
+        assert isinstance(result[0], Country)
+        assert result[0].code == "CO"
+        assert result[0].name == "Colombia"
+
+    @pytest.mark.asyncio
+    async def test_passes_name_filter_as_query_param(self):
+        gateway = make_gateway()
+        fake_resp = mock_response(200, {"data": []})
+
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=fake_resp)
+        mock_async_ctx = MagicMock()
+        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+            await gateway.get_countries(TOKEN, name="Colombia")
+
+        params = mock_client.get.call_args.kwargs["params"]
+        assert params == {"name": "Colombia"}
+
+    @pytest.mark.asyncio
+    async def test_raises_factus_api_error_on_http_error(self):
+        gateway = make_gateway()
+        fake_resp = mock_response(401, {"message": "Unauthenticated"})
+
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=fake_resp)
+        mock_async_ctx = MagicMock()
+        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+            with pytest.raises(FactusAPIError) as exc_info:
+                await gateway.get_countries(TOKEN)
+
+        assert exc_info.value.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# get_acquirer()
+# ---------------------------------------------------------------------------
+
+class TestGetAcquirer:
+    @pytest.mark.asyncio
+    async def test_returns_acquirer_data(self):
+        gateway = make_gateway()
+        api_data = {"name": "Empresa XYZ SAS", "email": "contacto@xyz.com"}
+        fake_resp = mock_response(200, {"data": api_data})
+
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=fake_resp)
+        mock_async_ctx = MagicMock()
+        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+            result = await gateway.get_acquirer(TOKEN, identification_document_id=6, identification_number="900123456")
+
+        assert isinstance(result, Acquirer)
+        assert result.name == "Empresa XYZ SAS"
+        assert result.email == "contacto@xyz.com"
+
+    @pytest.mark.asyncio
+    async def test_sends_correct_query_params(self):
+        gateway = make_gateway()
+        api_data = {"name": "Test", "email": "test@test.com"}
+        fake_resp = mock_response(200, {"data": api_data})
+
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=fake_resp)
+        mock_async_ctx = MagicMock()
+        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+            await gateway.get_acquirer(TOKEN, identification_document_id=3, identification_number="12345678")
+
+        params = mock_client.get.call_args.kwargs["params"]
+        assert params["identification_document_id"] == 3
+        assert params["identification_number"] == "12345678"
+
+    @pytest.mark.asyncio
+    async def test_raises_factus_api_error_on_http_error(self):
+        gateway = make_gateway()
+        fake_resp = mock_response(404, {"message": "Adquiriente no encontrado"})
+
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=fake_resp)
+        mock_async_ctx = MagicMock()
+        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+            with pytest.raises(FactusAPIError) as exc_info:
+                await gateway.get_acquirer(TOKEN, identification_document_id=6, identification_number="000000000")
+
+        assert exc_info.value.status_code == 404

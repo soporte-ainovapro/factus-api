@@ -195,6 +195,76 @@
                             "path": ["lookups", "units"]
                         }
                     }
+                },
+                {
+                    "name": "Get Reference Tables",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/lookups/reference-tables",
+                            "host": ["{{base_url}}"],
+                            "path": ["lookups", "reference-tables"]
+                        },
+                        "description": "Retorna todas las tablas de referencia fijas definidas por la DIAN. No requiere token de Factus."
+                    }
+                },
+                {
+                    "name": "Get Countries",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/lookups/countries",
+                            "host": ["{{base_url}}"],
+                            "path": ["lookups", "countries"],
+                            "query": [
+                                {
+                                    "key": "name",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": "Filtrar por nombre del país"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Acquirer",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/lookups/acquirer?identification_document_id=3&identification_number=1399995",
+                            "host": ["{{base_url}}"],
+                            "path": ["lookups", "acquirer"],
+                            "query": [
+                                {
+                                    "key": "identification_document_id",
+                                    "value": "3",
+                                    "description": "ID del tipo de documento (ver /reference-tables)"
+                                },
+                                {
+                                    "key": "identification_number",
+                                    "value": "1399995",
+                                    "description": "Número de documento del adquiriente"
+                                }
+                            ]
+                        },
+                        "description": "Consulta nombre y correo de un adquiriente en la DIAN. Útil para autocompletar datos del cliente."
+                    }
                 }
             ]
         },
@@ -210,10 +280,7 @@
                                 "exec": [
                                     "var ts = Date.now();",
                                     "var ref = 'FAC-' + ts;",
-                                    "pm.collectionVariables.set('reference_code', ref);",
-                                    "var body = JSON.parse(pm.request.body.raw);",
-                                    "body.reference_code = ref;",
-                                    "pm.request.body.update(JSON.stringify(body));"
+                                    "pm.collectionVariables.set('reference_code', ref);"
                                 ],
                                 "type": "text/javascript"
                             }
@@ -242,7 +309,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"document\": \"01\",\n    \"numbering_range_id\": 8,\n    \"reference_code\": \"FAC-001\",\n    \"observation\": \"Prueba de factura\",\n    \"payment_method_code\": \"10\",\n    \"payment_form\": \"1\",\n    \"customer\": {\n        \"identification_document_id\": 3,\n        \"identification\": \"123456789\",\n        \"names\": \"Juan Perez\",\n        \"address\": \"Calle 123\",\n        \"email\": \"juan@example.com\",\n        \"phone\": \"3001234567\",\n        \"municipality_id\": 980,\n        \"legal_organization_id\": 2,\n        \"tribute_id\": 21\n    },\n    \"items\": [\n        {\n            \"code_reference\": \"PROD-001\",\n            \"name\": \"Producto de prueba\",\n            \"quantity\": 1,\n            \"price\": \"10000.00\",\n            \"discount_rate\": \"0.00\",\n            \"tax_rate\": \"19.00\",\n            \"unit_measure_id\": 70,\n            \"standard_code_id\": 1,\n            \"is_excluded\": 0,\n            \"tribute_id\": 1\n        }\n    ]\n}",
+                            "raw": "{\n    \"document\": \"01\",\n    \"numbering_range_id\": 8,\n    \"reference_code\": \"{{reference_code}}\",\n    \"observation\": \"Prueba de factura\",\n    \"payment_method_code\": \"10\",\n    \"payment_form\": \"1\",\n    \"customer\": {\n        \"identification_document_id\": 3,\n        \"identification\": \"123456789\",\n        \"names\": \"Juan Perez\",\n        \"address\": \"Calle 123\",\n        \"email\": \"juan@example.com\",\n        \"phone\": \"3001234567\",\n        \"municipality_id\": 980,\n        \"legal_organization_id\": 2,\n        \"tribute_id\": 21\n    },\n    \"items\": [\n        {\n            \"code_reference\": \"PROD-001\",\n            \"name\": \"Producto de prueba\",\n            \"quantity\": 1,\n            \"price\": \"10000.00\",\n            \"discount_rate\": \"0.00\",\n            \"tax_rate\": \"19.00\",\n            \"unit_measure_id\": 70,\n            \"standard_code_id\": 1,\n            \"is_excluded\": 0,\n            \"tribute_id\": 1\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"

@@ -1,13 +1,15 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from app.src.api.v1.schemas.auth import LoginRequest, RefreshTokenRequest
 from app.src.core.responses import ApiResponse
+from app.src.domain.exceptions import FactusAPIError
 from app.src.domain.models.auth_token import AuthToken
 from app.src.domain.models.user import User, Token
 from app.src.infrastructure.gateways.factus_auth_gateway import FactusAuthGateway
 from app.src.core.config import settings
 from app.src.core.security import create_access_token
 from app.src.api.deps import get_current_user
+from app.src.core.limiter import limiter
 
 router = APIRouter()
 
@@ -19,7 +21,8 @@ def get_auth_gateway() -> FactusAuthGateway:
     )
 
 @router.post("/login", response_model=Token)
-async def login_local(form_data: OAuth2PasswordRequestForm = Depends()):
+@limiter.limit("5/minute")
+async def login_local(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
     # Mock authentication - admin:admin123
     if form_data.username != "admin" or form_data.password != "admin123":
         raise HTTPException(
@@ -40,11 +43,10 @@ async def login_factus(
     try:
         data = await gateway.authenticate(request.email, request.password)
         return ApiResponse(message="Autenticación exitosa", data=data)
+    except FactusAPIError as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"No se pudo obtener el token de Factus: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 @router.post("/factus/refresh", response_model=ApiResponse[AuthToken])
 async def refresh_factus_token(
@@ -55,8 +57,7 @@ async def refresh_factus_token(
     try:
         data = await gateway.refresh_token(request.refresh_token)
         return ApiResponse(message="Token refrescado exitosamente", data=data)
+    except FactusAPIError as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"No se pudo refrescar el token de Factus: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
