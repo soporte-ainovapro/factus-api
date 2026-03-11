@@ -1,10 +1,10 @@
 from unittest.mock import AsyncMock, patch
 import pytest
-from app.src.domain.models.company import CompanyUpdate
+from app.domain.models.company import CompanyUpdate
 
 @pytest.fixture
 def company_gateway_mock():
-    with patch('app.src.api.v1.endpoints.company.FactusCompanyGateway') as MockGateway:
+    with patch('app.api.v1.endpoints.company.FactusCompanyGateway') as MockGateway:
         mock_instance = MockGateway.return_value
         # Mock implementations
         mock_instance.get_company = AsyncMock()
@@ -15,6 +15,6 @@ def company_gateway_mock():
 @pytest.fixture
 def mock_get_company_gateway(company_gateway_mock):
     # This fixture replaces the dependency
-    from app.src.api.v1.endpoints.company import get_company_gateway as base_get_company_gateway
-    with patch('app.src.api.v1.endpoints.company.get_company_gateway', return_value=company_gateway_mock):
+    from app.api.v1.endpoints.company import get_company_gateway as base_get_company_gateway
+    with patch('app.api.v1.endpoints.company.get_company_gateway', return_value=company_gateway_mock):
         yield company_gateway_mock

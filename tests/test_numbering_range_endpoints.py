@@ -1,10 +1,10 @@
 from unittest.mock import AsyncMock, patch
 import pytest
-from app.src.domain.models.numbering_range import NumberingRangeCreate, NumberingRangeUpdate
+from app.domain.models.numbering_range import NumberingRangeCreate, NumberingRangeUpdate
 
 @pytest.fixture
 def numbering_range_gateway_mock():
-    with patch('app.src.api.v1.endpoints.numbering_ranges.FactusNumberingRangeGateway') as MockGateway:
+    with patch('app.api.v1.endpoints.numbering_ranges.FactusNumberingRangeGateway') as MockGateway:
         mock_instance = MockGateway.return_value
         # Mock implementations
         mock_instance.get_numbering_ranges = AsyncMock()
@@ -16,8 +16,8 @@ def numbering_range_gateway_mock():
         yield mock_instance
 
 from httpx import Response
-from app.src.domain.exceptions import FactusAPIError
-from app.src.domain.models.numbering_range import (
+from app.domain.exceptions import FactusAPIError
+from app.domain.models.numbering_range import (
     NumberingRangeCreate, 
     NumberingRangeUpdate,
     NumberingRangeListResponse,
@@ -30,21 +30,21 @@ from app.src.domain.models.numbering_range import (
 
 @pytest.fixture
 def numbering_range_gateway_mock():
-    with patch('app.src.api.v1.endpoints.numbering_ranges.FactusNumberingRangeGateway') as MockGateway:
+    with patch('app.api.v1.endpoints.numbering_ranges.FactusNumberingRangeGateway') as MockGateway:
         mock_instance = MockGateway.return_value
         yield mock_instance
 
 @pytest.fixture
 def mock_get_numbering_range_gateway(numbering_range_gateway_mock):
-    from app.src.api.v1.endpoints.numbering_ranges import get_numbering_range_gateway as base_get_numbering_range_gateway
-    with patch('app.src.api.v1.deps.Depends', return_value=numbering_range_gateway_mock):
+    from app.api.v1.endpoints.numbering_ranges import get_numbering_range_gateway as base_get_numbering_range_gateway
+    with patch('app.api.v1.deps.Depends', return_value=numbering_range_gateway_mock):
         # We will override the dependency during test client setup usually
         pass
     yield numbering_range_gateway_mock
 
 from fastapi.testclient import TestClient
-from app.src.main import app
-from app.src.api.v1.endpoints.numbering_ranges import get_numbering_range_gateway
+from app.main import app
+from app.api.v1.endpoints.numbering_ranges import get_numbering_range_gateway
 
 client = TestClient(app)
 

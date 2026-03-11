@@ -7,9 +7,11 @@ import pytest
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.src.infrastructure.gateways.factus_invoice_gateway import FactusInvoiceGateway
-from app.src.domain.models.invoice import (
-    Invoice, Customer, InvoiceItem,
+from app.infrastructure.gateways.factus_invoice_gateway import FactusInvoiceGateway
+from app.domain.models.invoice import Invoice
+from app.domain.models.customer import Customer
+from app.domain.models.item import Item as InvoiceItem
+from app.api.v1.schemas.invoice import (
     SendEmailRequest, InvoiceEventsResponse,
 )
 

@@ -7,10 +7,10 @@ import pytest
 from unittest.mock import AsyncMock
 from fastapi.testclient import TestClient
 
-from app.src.main import app
-from app.src.api.deps import verify_api_key
-from app.src.domain.models.auth_token import AuthToken
-from app.src.infrastructure.gateways.factus_auth_gateway import FactusAuthGateway
+from app.main import app
+from app.api.deps import verify_api_key
+from app.domain.models.auth_token import AuthToken
+from app.infrastructure.gateways.factus_auth_gateway import FactusAuthGateway
 
 TEST_API_KEY = "test-api-key-for-pytest"
 VALID_API_KEY_HEADER = {"X-API-Key": TEST_API_KEY}
@@ -31,7 +31,7 @@ def get_auth_client() -> TestClient:
 
 class TestFactusLogin:
     def test_factus_login_success(self):
-        from app.src.api.v1.endpoints.auth import get_auth_gateway
+        from app.api.v1.endpoints.auth import get_auth_gateway
 
         mock_gw = AsyncMock(spec=FactusAuthGateway)
         mock_gw.authenticate = AsyncMock(return_value=FACTUS_TOKEN)
@@ -61,8 +61,8 @@ class TestFactusLogin:
             "/api/v1/auth/factus/login",
             json={"email": "sandbox@factus.com.co", "password": "sandbox2024%"},
         )
-        # 403 Forbidden — missing API Key
-        assert response.status_code == 403
+        # 401 Unauthorized — missing API Key
+        assert response.status_code == 401
 
     def test_factus_login_invalid_api_key(self):
         """An incorrect API Key must return 403."""
@@ -94,7 +94,7 @@ class TestFactusRefresh:
             "/api/v1/auth/factus/refresh",
             json={"refresh_token": "some-token"},
         )
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_refresh_missing_body(self):
         client = get_auth_client()
@@ -107,7 +107,7 @@ class TestFactusRefresh:
         assert response.status_code == 422
 
     def test_refresh_success(self):
-        from app.src.api.v1.endpoints.auth import get_auth_gateway
+        from app.api.v1.endpoints.auth import get_auth_gateway
 
         mock_gw = AsyncMock(spec=FactusAuthGateway)
         mock_gw.refresh_token = AsyncMock(return_value=FACTUS_TOKEN)

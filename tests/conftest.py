@@ -9,9 +9,9 @@ import os
 from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient
 
-from app.src.main import app
-from app.src.api.deps import verify_api_key
-from app.src.core.config import settings
+from app.main import app
+from app.api.deps import verify_api_key
+from app.core.config import settings
 
 # Use a fixed test API key that matches what the deps.py will validate.
 TEST_API_KEY = "test-api-key-for-pytest"

@@ -6,9 +6,9 @@ All HTTP calls are mocked — no real network requests.
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.src.infrastructure.gateways.factus_lookup_gateway import FactusLookupGateway
-from app.src.domain.models.lookup import Municipality, Tax, Unit, NumberingRange, Country, Acquirer
-from app.src.domain.exceptions import FactusAPIError
+from app.infrastructure.gateways.factus_lookup_gateway import FactusLookupGateway
+from app.domain.models.lookup import Municipality, Tax, Unit, NumberingRange, Country, Acquirer
+from app.domain.exceptions import FactusAPIError
 
 BASE_URL = "https://api-sandbox.factus.com.co"
 TOKEN = "fake-factus-token"

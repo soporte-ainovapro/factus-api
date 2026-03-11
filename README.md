@@ -74,7 +74,7 @@ See `.env.example` for the full list of supported variables.
 ## Running the server
 
 ```bash
-uvicorn app.src.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Interactive docs available at: `http://localhost:8000/api/v1/docs` (only when `ENVIRONMENT != production`).
@@ -91,7 +91,7 @@ pytest --cov=app.src --cov-report=html
 ## Architecture
 
 ```
-app/src/
+app/
 ├── main.py                      # FastAPI app factory
 ├── api/
 │   ├── deps.py                  # Shared dependencies (auth)

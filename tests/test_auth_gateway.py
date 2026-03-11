@@ -6,8 +6,8 @@ All HTTP calls are mocked via unittest.mock — no real network requests.
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 
-from app.src.infrastructure.gateways.factus_auth_gateway import FactusAuthGateway
-from app.src.domain.models.auth_token import AuthToken
+from app.infrastructure.gateways.factus_auth_gateway import FactusAuthGateway
+from app.domain.models.auth_token import AuthToken
 
 BASE_URL = "https://api-sandbox.factus.com.co"
 CLIENT_ID = "test-client-id"

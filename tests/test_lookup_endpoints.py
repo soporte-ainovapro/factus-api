@@ -7,21 +7,21 @@ The local JWT auth dependency is overridden via dependency_overrides.
 from unittest.mock import AsyncMock
 from fastapi.testclient import TestClient
 
-from app.src.main import app
-from app.src.api.deps import get_current_user
-from app.src.domain.models.user import User
-from app.src.domain.models.lookup import (
+from app.main import app
+from app.api.deps import verify_api_key
+from app.domain.models.user import User
+from app.domain.models.lookup import (
     Municipality, Tax, Unit, NumberingRange, Country, Acquirer,
 )
-from app.src.domain.exceptions import FactusAPIError
-from app.src.infrastructure.gateways.factus_lookup_gateway import FactusLookupGateway
+from app.domain.exceptions import FactusAPIError
+from app.infrastructure.gateways.factus_lookup_gateway import FactusLookupGateway
 
 ADMIN_USER = User(username="admin", email="admin@example.com", full_name="Admin")
 FACTUS_TOKEN_HEADER = {"x-factus-token": "fake-factus-token"}
 
 
 def get_test_client() -> TestClient:
-    app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
+    app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
     return TestClient(app)
 
 
@@ -57,14 +57,14 @@ class TestGetReferenceTables:
 
 class TestGetMunicipalitiesEndpoint:
     def test_success(self):
-        from app.src.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.endpoints.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_municipalities = AsyncMock(return_value=[
             Municipality(id=1, name="Bogotá", code="11001", department="Cundinamarca"),
         ])
 
-        app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
+        app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)
@@ -75,14 +75,14 @@ class TestGetMunicipalitiesEndpoint:
         assert response.json()["data"][0]["name"] == "Bogotá"
 
     def test_propagates_factus_error(self):
-        from app.src.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.endpoints.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_municipalities = AsyncMock(
             side_effect=FactusAPIError("No autorizado", status_code=401)
         )
 
-        app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
+        app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)
@@ -98,14 +98,14 @@ class TestGetMunicipalitiesEndpoint:
 
 class TestGetTaxesEndpoint:
     def test_success(self):
-        from app.src.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.endpoints.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_tax_types = AsyncMock(return_value=[
             Tax(id=1, name="IVA", code="01"),
         ])
 
-        app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
+        app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)
@@ -122,14 +122,14 @@ class TestGetTaxesEndpoint:
 
 class TestGetCountriesEndpoint:
     def test_success(self):
-        from app.src.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.endpoints.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_countries = AsyncMock(return_value=[
             Country(id=1, code="CO", name="Colombia"),
         ])
 
-        app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
+        app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)
@@ -140,12 +140,12 @@ class TestGetCountriesEndpoint:
         assert response.json()["data"][0]["code"] == "CO"
 
     def test_passes_name_filter(self):
-        from app.src.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.endpoints.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_countries = AsyncMock(return_value=[])
 
-        app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
+        app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)
@@ -155,14 +155,14 @@ class TestGetCountriesEndpoint:
         mock_gw.get_countries.assert_awaited_once_with("fake-factus-token", name="Colombia")
 
     def test_propagates_factus_error(self):
-        from app.src.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.endpoints.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_countries = AsyncMock(
             side_effect=FactusAPIError("Token expirado", status_code=401)
         )
 
-        app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
+        app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)
@@ -178,7 +178,7 @@ class TestGetCountriesEndpoint:
 
 class TestGetAcquirerEndpoint:
     def test_success(self):
-        from app.src.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.endpoints.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_acquirer = AsyncMock(return_value=Acquirer(
@@ -186,7 +186,7 @@ class TestGetAcquirerEndpoint:
             email="abc@empresa.com",
         ))
 
-        app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
+        app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)
@@ -208,14 +208,14 @@ class TestGetAcquirerEndpoint:
         assert response.status_code == 422
 
     def test_propagates_factus_404(self):
-        from app.src.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.endpoints.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_acquirer = AsyncMock(
             side_effect=FactusAPIError("No encontrado", status_code=404)
         )
 
-        app.dependency_overrides[get_current_user] = lambda: ADMIN_USER
+        app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)

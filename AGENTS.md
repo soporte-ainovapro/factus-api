@@ -12,10 +12,10 @@ FastAPI-based REST API for interacting with the Factus (Colombian e-invoicing) A
 
 ```bash
 # Development server with auto-reload
-uvicorn app.src.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # Or using fastapi CLI (if installed)
-fastapi dev app/src/main.py
+fastapi dev app/main.py
 ```
 
 ### Testing
@@ -58,7 +58,7 @@ mypy app/
 ### Project Structure
 
 ```
-app/src/
+app/
 ├── main.py                 # FastAPI app factory
 ├── api/
 │   ├── v1/
@@ -80,7 +80,7 @@ app/src/
 
 ### Import Conventions
 
-- Use absolute imports: `from app.src.module import ...`
+- Use absolute imports: `from app.module import ...`
 - Order: stdlib → third-party → local
 - Use `isort` for automatic sorting
 
@@ -94,9 +94,9 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 
-from app.src.api.deps import get_current_user
-from app.src.core.config import settings
-from app.src.domain.models.user import User
+from app.api.deps import get_current_user
+from app.core.config import settings
+from app.domain.models.user import User
 ```
 
 ### Type Annotations
@@ -192,7 +192,7 @@ def get_item(item_id: str) -> Item:
 
 - Use FastAPI's `Depends()` for dependency injection
 - Create factory functions for gateway/infrastructure initialization
-- Use `app/src/api/deps.py` for shared dependencies
+- Use `app/api/deps.py` for shared dependencies
 
 ```python
 def get_auth_gateway() -> FactusAuthGateway:
