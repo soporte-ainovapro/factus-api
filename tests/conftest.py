@@ -1,23 +1,20 @@
 """
 Shared fixtures and helpers for the test suite.
+
+With API Key auth, tests now inject a valid key via override or pass it
+directly in HTTP headers. The old local JWT mechanism has been removed.
 """
 import pytest
+import os
 from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient
 
 from app.src.main import app
-from app.src.core.security import create_access_token
-from app.src.api.deps import fake_users_db, get_current_user
-from app.src.domain.models.user import User
+from app.src.api.deps import verify_api_key
+from app.src.core.config import settings
 
-
-# ---------------------------------------------------------------------------
-# JWT helper
-# ---------------------------------------------------------------------------
-
-def make_local_token(username: str = "admin") -> str:
-    """Return a valid local JWT for the given username."""
-    return create_access_token(data={"sub": username})
+# Use a fixed test API key that matches what the deps.py will validate.
+TEST_API_KEY = "test-api-key-for-pytest"
 
 
 # ---------------------------------------------------------------------------
@@ -26,16 +23,26 @@ def make_local_token(username: str = "admin") -> str:
 
 @pytest.fixture
 def client() -> TestClient:
-    """Synchronous TestClient that bypasses local auth by injecting a real user."""
-    admin_user = User(**fake_users_db["admin"])
-
-    # Override the auth dependency so tests don't need a real JWT
-    app.dependency_overrides[get_current_user] = lambda: admin_user
+    """
+    Synchronous TestClient that bypasses API Key auth by overriding the
+    verify_api_key dependency. Use this for endpoint tests that should
+    not be blocked by auth.
+    """
+    # Override the auth dependency so tests don't need a real API key
+    app.dependency_overrides[verify_api_key] = lambda: TEST_API_KEY
 
     with TestClient(app) as c:
         yield c
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_no_auth() -> TestClient:
+    """TestClient WITHOUT auth override — tests that verify 403 responses."""
+    app.dependency_overrides.clear()
+    with TestClient(app, raise_server_exceptions=False) as c:
+        yield c
 
 
 # ---------------------------------------------------------------------------

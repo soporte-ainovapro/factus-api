@@ -6,7 +6,6 @@ from app.src.domain.models.lookup import (
     Municipality,
     Tax,
     Unit,
-    NumberingRange,
     Country,
     Acquirer,
     ReferenceTables,
@@ -17,8 +16,7 @@ from app.src.domain.models.lookup import (
 from app.src.infrastructure.gateways.factus_lookup_gateway import FactusLookupGateway
 from app.src.core.config import settings
 
-from app.src.domain.models.user import User
-from app.src.api.deps import get_current_user
+from app.src.api.deps import verify_api_key
 
 router = APIRouter()
 
@@ -83,7 +81,7 @@ def get_lookup_gateway() -> FactusLookupGateway:
 
 @router.get("/reference-tables", response_model=ApiResponse[ReferenceTables])
 async def get_reference_tables(
-    current_user: User = Depends(get_current_user)
+    _: str = Depends(verify_api_key)
 ):
     """
     Retorna todas las tablas de referencia fijas definidas por la DIAN.
@@ -101,7 +99,7 @@ async def get_reference_tables(
 async def get_municipalities(
     x_factus_token: str = Header(...),
     gateway: FactusLookupGateway = Depends(get_lookup_gateway),
-    current_user: User = Depends(get_current_user)
+    _: str = Depends(verify_api_key)
 ):
     try:
         data = await gateway.get_municipalities(x_factus_token)
@@ -116,7 +114,7 @@ async def get_municipalities(
 async def get_taxes(
     x_factus_token: str = Header(...),
     gateway: FactusLookupGateway = Depends(get_lookup_gateway),
-    current_user: User = Depends(get_current_user)
+    _: str = Depends(verify_api_key)
 ):
     try:
         data = await gateway.get_tax_types(x_factus_token)
@@ -131,7 +129,7 @@ async def get_taxes(
 async def get_units(
     x_factus_token: str = Header(...),
     gateway: FactusLookupGateway = Depends(get_lookup_gateway),
-    current_user: User = Depends(get_current_user)
+    _: str = Depends(verify_api_key)
 ):
     try:
         data = await gateway.get_units(x_factus_token)
@@ -142,27 +140,13 @@ async def get_units(
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
-@router.get("/numbering-ranges", response_model=ApiResponse[List[NumberingRange]])
-async def get_numbering_ranges(
-    x_factus_token: str = Header(...),
-    gateway: FactusLookupGateway = Depends(get_lookup_gateway),
-    current_user: User = Depends(get_current_user)
-):
-    try:
-        data = await gateway.get_numbering_ranges(x_factus_token)
-        return ApiResponse(message="Rangos de numeración obtenidos exitosamente", data=data)
-    except FactusAPIError as e:
-        raise HTTPException(status_code=e.status_code, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
-
 
 @router.get("/countries", response_model=ApiResponse[List[Country]])
 async def get_countries(
     x_factus_token: str = Header(...),
     name: Optional[str] = Query(None, description="Filtrar por nombre del país"),
     gateway: FactusLookupGateway = Depends(get_lookup_gateway),
-    current_user: User = Depends(get_current_user)
+    _: str = Depends(verify_api_key)
 ):
     try:
         data = await gateway.get_countries(x_factus_token, name=name)
@@ -183,7 +167,7 @@ async def get_acquirer(
         ..., description="Número de documento del adquiriente"
     ),
     gateway: FactusLookupGateway = Depends(get_lookup_gateway),
-    current_user: User = Depends(get_current_user)
+    _: str = Depends(verify_api_key)
 ):
     """
     Consulta nombre y correo de un adquiriente directamente en la DIAN,

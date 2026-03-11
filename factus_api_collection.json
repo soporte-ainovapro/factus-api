@@ -42,8 +42,13 @@
                         },
                         "url": {
                             "raw": "{{base_url}}/auth/login",
-                            "host": ["{{base_url}}"],
-                            "path": ["auth", "login"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login"
+                            ]
                         }
                     }
                 }
@@ -81,8 +86,14 @@
                         },
                         "url": {
                             "raw": "{{base_url}}/auth/factus/login",
-                            "host": ["{{base_url}}"],
-                            "path": ["auth", "factus", "login"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "factus",
+                                "login"
+                            ]
                         }
                     }
                 },
@@ -114,8 +125,14 @@
                         },
                         "url": {
                             "raw": "{{base_url}}/auth/factus/refresh",
-                            "host": ["{{base_url}}"],
-                            "path": ["auth", "factus", "refresh"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "factus",
+                                "refresh"
+                            ]
                         }
                     }
                 }
@@ -137,8 +154,13 @@
                         ],
                         "url": {
                             "raw": "{{base_url}}/lookups/numbering-ranges",
-                            "host": ["{{base_url}}"],
-                            "path": ["lookups", "numbering-ranges"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "lookups",
+                                "numbering-ranges"
+                            ]
                         }
                     }
                 },
@@ -155,8 +177,13 @@
                         ],
                         "url": {
                             "raw": "{{base_url}}/lookups/municipalities",
-                            "host": ["{{base_url}}"],
-                            "path": ["lookups", "municipalities"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "lookups",
+                                "municipalities"
+                            ]
                         }
                     }
                 },
@@ -173,8 +200,13 @@
                         ],
                         "url": {
                             "raw": "{{base_url}}/lookups/taxes",
-                            "host": ["{{base_url}}"],
-                            "path": ["lookups", "taxes"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "lookups",
+                                "taxes"
+                            ]
                         }
                     }
                 },
@@ -191,8 +223,13 @@
                         ],
                         "url": {
                             "raw": "{{base_url}}/lookups/units",
-                            "host": ["{{base_url}}"],
-                            "path": ["lookups", "units"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "lookups",
+                                "units"
+                            ]
                         }
                     }
                 },
@@ -203,8 +240,13 @@
                         "header": [],
                         "url": {
                             "raw": "{{base_url}}/lookups/reference-tables",
-                            "host": ["{{base_url}}"],
-                            "path": ["lookups", "reference-tables"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "lookups",
+                                "reference-tables"
+                            ]
                         },
                         "description": "Retorna todas las tablas de referencia fijas definidas por la DIAN. No requiere token de Factus."
                     }
@@ -222,14 +264,19 @@
                         ],
                         "url": {
                             "raw": "{{base_url}}/lookups/countries",
-                            "host": ["{{base_url}}"],
-                            "path": ["lookups", "countries"],
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "lookups",
+                                "countries"
+                            ],
                             "query": [
                                 {
                                     "key": "name",
                                     "value": "",
                                     "disabled": true,
-                                    "description": "Filtrar por nombre del país"
+                                    "description": "Filtrar por nombre del pa\u00eds"
                                 }
                             ]
                         }
@@ -248,8 +295,13 @@
                         ],
                         "url": {
                             "raw": "{{base_url}}/lookups/acquirer?identification_document_id=3&identification_number=1399995",
-                            "host": ["{{base_url}}"],
-                            "path": ["lookups", "acquirer"],
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "lookups",
+                                "acquirer"
+                            ],
                             "query": [
                                 {
                                     "key": "identification_document_id",
@@ -259,11 +311,11 @@
                                 {
                                     "key": "identification_number",
                                     "value": "1399995",
-                                    "description": "Número de documento del adquiriente"
+                                    "description": "N\u00famero de documento del adquiriente"
                                 }
                             ]
                         },
-                        "description": "Consulta nombre y correo de un adquiriente en la DIAN. Útil para autocompletar datos del cliente."
+                        "description": "Consulta nombre y correo de un adquiriente en la DIAN. \u00datil para autocompletar datos del cliente."
                     }
                 }
             ]
@@ -318,8 +370,13 @@
                         },
                         "url": {
                             "raw": "{{base_url}}/invoices/",
-                            "host": ["{{base_url}}"],
-                            "path": ["invoices", ""]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "invoices",
+                                ""
+                            ]
                         }
                     }
                 },
@@ -336,8 +393,13 @@
                         ],
                         "url": {
                             "raw": "{{base_url}}/invoices/{{invoice_number}}",
-                            "host": ["{{base_url}}"],
-                            "path": ["invoices", "{{invoice_number}}"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "invoices",
+                                "{{invoice_number}}"
+                            ]
                         }
                     }
                 },
@@ -354,8 +416,14 @@
                         ],
                         "url": {
                             "raw": "{{base_url}}/invoices/{{invoice_number}}/pdf",
-                            "host": ["{{base_url}}"],
-                            "path": ["invoices", "{{invoice_number}}", "pdf"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "invoices",
+                                "{{invoice_number}}",
+                                "pdf"
+                            ]
                         }
                     }
                 },
@@ -372,8 +440,14 @@
                         ],
                         "url": {
                             "raw": "{{base_url}}/invoices/{{invoice_number}}/xml",
-                            "host": ["{{base_url}}"],
-                            "path": ["invoices", "{{invoice_number}}", "xml"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "invoices",
+                                "{{invoice_number}}",
+                                "xml"
+                            ]
                         }
                     }
                 },
@@ -390,8 +464,14 @@
                         ],
                         "url": {
                             "raw": "{{base_url}}/invoices/{{invoice_number}}/events",
-                            "host": ["{{base_url}}"],
-                            "path": ["invoices", "{{invoice_number}}", "events"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "invoices",
+                                "{{invoice_number}}",
+                                "events"
+                            ]
                         }
                     }
                 },
@@ -417,8 +497,14 @@
                         },
                         "url": {
                             "raw": "{{base_url}}/invoices/{{invoice_number}}/send-email",
-                            "host": ["{{base_url}}"],
-                            "path": ["invoices", "{{invoice_number}}", "send-email"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "invoices",
+                                "{{invoice_number}}",
+                                "send-email"
+                            ]
                         }
                     }
                 },
@@ -435,10 +521,302 @@
                         ],
                         "url": {
                             "raw": "{{base_url}}/invoices/reference/{{reference_code}}",
-                            "host": ["{{base_url}}"],
-                            "path": ["invoices", "reference", "{{reference_code}}"]
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "invoices",
+                                "reference",
+                                "{{reference_code}}"
+                            ]
                         }
                     }
+                }
+            ]
+        },
+        {
+            "name": "Empresas",
+            "item": [
+                {
+                    "name": "Ver Empresa",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "x-factus-token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/company",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "company"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Actualizar Empresa",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "x-factus-token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\\n  \"company\": null,\\n  \"names\": \"Alan\",\\n  \"surnames\": \"Turing\",\\n  \"responsibilities\": \"5\",\\n  \"economic_activity\": \"6920\",\\n  \"email\": \"email@domain.com\",\\n  \"address\": \"calle 100 #50-80\",\\n  \"trade_name\": null,\\n  \"registration_code\": null,\\n  \"phone\": \"0987654321\",\\n  \"municipality_code\": \"68872\",\\n  \"tribute_code\": \"ZZ\",\\n  \"legal_organization_code\": \"2\"\\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/company",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "company"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Actualizar Logo de la Empresa",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "x-factus-token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "image",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/company/logo",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "company",
+                                "logo"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Rangos de Numeraci\u00f3n",
+            "item": [
+                {
+                    "name": "Obtener Rangos de Numeraci\u00f3n",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "x-factus-token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/numbering-ranges",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "numbering-ranges"
+                            ],
+                            "query": [
+                                {
+                                    "key": "filter[document]",
+                                    "value": "21",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "filter[is_active]",
+                                    "value": "1",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Rangos asociados al software",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "x-factus-token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/numbering-ranges/software",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "numbering-ranges",
+                                "software"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Ver Rango",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "x-factus-token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/numbering-ranges/{{numbering_range_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "numbering-ranges",
+                                "{{numbering_range_id}}"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Crear Rango",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "x-factus-token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\\n  \\\"document\\\": \\\"21\\\",\\n  \\\"prefix\\\": \\\"FV\\\",\\n  \\\"current\\\": 1,\\n  \\\"resolution_number\\\": \\\"d3kd93kd39jd92\\\"\\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/numbering-ranges",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "numbering-ranges"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Actualizar consecutivo",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "x-factus-token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\\n  \\\"current\\\": 5\\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/numbering-ranges/{{numbering_range_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "numbering-ranges",
+                                "{{numbering_range_id}}"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Eliminar Rango",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "x-factus-token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/numbering-ranges/{{numbering_range_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "numbering-ranges",
+                                "{{numbering_range_id}}"
+                            ]
+                        }
+                    },
+                    "response": []
                 }
             ]
         }
@@ -458,14 +836,18 @@
             "listen": "prerequest",
             "script": {
                 "type": "text/javascript",
-                "exec": [""]
+                "exec": [
+                    ""
+                ]
             }
         },
         {
             "listen": "test",
             "script": {
                 "type": "text/javascript",
-                "exec": [""]
+                "exec": [
+                    ""
+                ]
             }
         }
     ],

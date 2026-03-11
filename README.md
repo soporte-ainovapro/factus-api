@@ -2,14 +2,12 @@
 
 REST API built with FastAPI that acts as a secure intermediary for the [Factus](https://factus.com.co) Colombian e-invoicing platform. It exposes authenticated endpoints for creating, querying, downloading, and managing electronic invoices validated by the DIAN.
 
-## Documentation
-
-Full documentation is available at: https://soporte-ainovapro-factus-api.mintlify.app/
-
 ## Features
 
 - JWT-based local authentication
 - Full Factus OAuth2 token lifecycle (login + refresh)
+- Company profile management (view, update, logo update)
+- Numbering Ranges management (CRUD operations)
 - Invoice creation and DIAN validation
 - PDF and XML download (base64-encoded)
 - Email delivery of validated invoices
@@ -119,20 +117,21 @@ The architecture follows a ports-and-adapters pattern. Endpoints depend only on 
 
 ## API Reference
 
-All protected endpoints require two headers:
+All endpoints require two headers:
 
 | Header | Value |
 |---|---|
-| `Authorization` | `Bearer <local_jwt>` |
-| `X-Factus-Token` | `<factus_access_token>` |
+| `X-API-Key` | `<internal_api_key>` — clave compartida entre el backend de Baiji y este middleware |
+| `X-Factus-Token` | `<factus_access_token>` — token OAuth2 obtenido mediante `/auth/factus/login` |
+
+> **Autenticación servicio a servicio**: el middleware ya **no usa** un sistema de usuarios ni emite JWT locales. La autenticación se realiza exclusivamente mediante la `FACTUS_INTERNAL_API_KEY`, que debe coincidir en el `.env` de este servicio y en el de `backend-app-baiji`.
 
 ### Authentication
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/v1/auth/login` | Local login — returns local JWT |
-| `POST` | `/api/v1/auth/factus/login` | Authenticate against Factus |
-| `POST` | `/api/v1/auth/factus/refresh` | Refresh Factus access token |
+| `POST` | `/api/v1/auth/factus/login` | Autenticar contra Factus y obtener Factus Token |
+| `POST` | `/api/v1/auth/factus/refresh` | Refrescar el Factus Token |
 
 ### Invoices
 
@@ -146,6 +145,25 @@ All protected endpoints require two headers:
 | `POST` | `/api/v1/invoices/{number}/send-email` | Send invoice by email |
 | `DELETE` | `/api/v1/invoices/reference/{code}` | Delete unvalidated invoice |
 
+### Company (Empresa)
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/v1/company` | Get user company profile |
+| `PUT` | `/api/v1/company` | Update user company profile |
+| `POST` | `/api/v1/company/logo` | Update user company logo |
+
+### Numbering Ranges (Rangos de Numeración)
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/v1/numbering-ranges` | List filtered numbering ranges |
+| `POST` | `/api/v1/numbering-ranges` | Create a new numbering range |
+| `GET` | `/api/v1/numbering-ranges/software` | List numbering ranges associated with software |
+| `GET` | `/api/v1/numbering-ranges/{id}` | Get specific numbering range details |
+| `PUT` | `/api/v1/numbering-ranges/{id}` | Update numbering range consecutive |
+| `DELETE` | `/api/v1/numbering-ranges/{id}` | Delete numbering range |
+
 ### Lookups
 
 All lookup endpoints require `Authorization: Bearer <local_jwt>`. Endpoints marked with * also require `X-Factus-Token`.
@@ -153,7 +171,6 @@ All lookup endpoints require `Authorization: Bearer <local_jwt>`. Endpoints mark
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | `GET` | `/api/v1/lookups/reference-tables` | JWT only | All fixed DIAN reference tables (see below) |
-| `GET` | `/api/v1/lookups/numbering-ranges` | JWT + Factus* | Available numbering ranges |
 | `GET` | `/api/v1/lookups/municipalities` | JWT + Factus* | Colombian municipalities |
 | `GET` | `/api/v1/lookups/taxes` | JWT + Factus* | Product tax types |
 | `GET` | `/api/v1/lookups/units` | JWT + Factus* | Units of measure |
@@ -207,9 +224,9 @@ Import `factus_api_collection.json` to get a ready-to-use collection.
 
 **Workflow:**
 
-1. Run **1. Local Login** — saves `local_jwt` automatically.
-2. Run **2. Factus Login** — saves `factus_token` and `factus_refresh_token` automatically.
-3. Run any **Invoices** or **Lookups** request.
+1. Run **Factus Login** — saves `factus_token` and `factus_refresh_token` automatically.
+   - Requires `X-API-Key` header (configured in `FACTUS_INTERNAL_API_KEY` variable).
+2. Run any **Invoices** or **Lookups** request.
 
 The **Create Invoice** request generates a unique `reference_code` (timestamp-based) on every run via a pre-request script, preventing 409 duplicate conflicts. The returned `invoice_number` is automatically saved to `{{invoice_number}}` for use in subsequent requests (Get, PDF, XML, Email, Events).
 
@@ -221,5 +238,4 @@ The **Create Invoice** request generates a unique `reference_code` (timestamp-ba
 | Email | `sandbox@factus.com.co` |
 | Password | `sandbox2024%` |
 | Numbering range ID (Factura de Venta) | `8` (prefix `SETP`) |
-
-Local mock user: `admin` / `admin123`
+| Internal API Key | `baiji-internal-secret-key-dev-2024-change-in-production` |

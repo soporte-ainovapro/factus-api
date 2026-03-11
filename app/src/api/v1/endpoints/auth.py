@@ -1,45 +1,42 @@
-from fastapi import APIRouter, HTTPException, Depends, Request, status
-from fastapi.security import OAuth2PasswordRequestForm
+"""
+Auth endpoints for factus-api.
+
+- POST /factus/login  → Authenticate against Factus using the API Key.
+- POST /factus/refresh → Refresh an existing Factus token.
+
+The /login (local mock) endpoint has been removed. All callers
+must authenticate using the shared X-API-Key header instead.
+"""
+from fastapi import APIRouter, HTTPException, Depends
 from app.src.api.v1.schemas.auth import LoginRequest, RefreshTokenRequest
 from app.src.core.responses import ApiResponse
 from app.src.domain.exceptions import FactusAPIError
 from app.src.domain.models.auth_token import AuthToken
-from app.src.domain.models.user import User, Token
 from app.src.infrastructure.gateways.factus_auth_gateway import FactusAuthGateway
 from app.src.core.config import settings
-from app.src.core.security import create_access_token
-from app.src.api.deps import get_current_user
-from app.src.core.limiter import limiter
+from app.src.api.deps import verify_api_key
 
 router = APIRouter()
+
 
 def get_auth_gateway() -> FactusAuthGateway:
     return FactusAuthGateway(
         base_url=settings.FACTUS_BASE_URL,
         client_id=settings.FACTUS_CLIENT_ID,
-        client_secret=settings.FACTUS_CLIENT_SECRET
+        client_secret=settings.FACTUS_CLIENT_SECRET,
     )
 
-@router.post("/login", response_model=Token)
-@limiter.limit("5/minute")
-async def login_local(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
-    # Mock authentication - admin:admin123
-    if form_data.username != "admin" or form_data.password != "admin123":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    access_token = create_access_token(data={"sub": form_data.username})
-    return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/factus/login", response_model=ApiResponse[AuthToken])
 async def login_factus(
     request: LoginRequest,
     gateway: FactusAuthGateway = Depends(get_auth_gateway),
-    current_user: User = Depends(get_current_user)
+    _: str = Depends(verify_api_key),
 ):
+    """
+    Autentica contra la API de Factus usando las credenciales proporcionadas.
+    Requiere la cabecera X-API-Key con la clave interna de la plataforma.
+    """
     try:
         data = await gateway.authenticate(request.email, request.password)
         return ApiResponse(message="Autenticación exitosa", data=data)
@@ -48,12 +45,17 @@ async def login_factus(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
+
 @router.post("/factus/refresh", response_model=ApiResponse[AuthToken])
 async def refresh_factus_token(
     request: RefreshTokenRequest,
     gateway: FactusAuthGateway = Depends(get_auth_gateway),
-    current_user: User = Depends(get_current_user)
+    _: str = Depends(verify_api_key),
 ):
+    """
+    Refresca el token de acceso de Factus usando el refresh_token.
+    Requiere la cabecera X-API-Key con la clave interna de la plataforma.
+    """
     try:
         data = await gateway.refresh_token(request.refresh_token)
         return ApiResponse(message="Token refrescado exitosamente", data=data)

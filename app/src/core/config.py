@@ -16,7 +16,11 @@ class Settings(BaseSettings):
     FACTUS_CLIENT_ID: str
     FACTUS_CLIENT_SECRET: str
 
-    SECRET_KEY: str
+    # Clave compartida con backend-app-baiji para autenticación servicio a servicio
+    FACTUS_INTERNAL_API_KEY: str
+
+    # Mantenemos SECRET_KEY para firma JWT (auth legacy / testing)
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
