@@ -9,7 +9,6 @@ must authenticate using the shared X-API-Key header instead.
 """
 from fastapi import APIRouter, HTTPException, Depends
 from app.api.v1.schemas.auth import LoginRequest, RefreshTokenRequest
-from app.core.responses import ApiResponse
 from app.domain.exceptions import FactusAPIError
 from app.domain.models.auth_token import AuthToken
 from app.infrastructure.gateways.factus_auth_gateway import FactusAuthGateway
@@ -27,7 +26,7 @@ def get_auth_gateway() -> FactusAuthGateway:
     )
 
 
-@router.post("/factus/login", response_model=ApiResponse[AuthToken])
+@router.post("/factus/login", response_model=AuthToken)
 async def login_factus(
     request: LoginRequest,
     gateway: FactusAuthGateway = Depends(get_auth_gateway),
@@ -39,14 +38,14 @@ async def login_factus(
     """
     try:
         data = await gateway.authenticate(request.email, request.password)
-        return ApiResponse(message="Autenticación exitosa", data=data)
+        return data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
-@router.post("/factus/refresh", response_model=ApiResponse[AuthToken])
+@router.post("/factus/refresh", response_model=AuthToken)
 async def refresh_factus_token(
     request: RefreshTokenRequest,
     gateway: FactusAuthGateway = Depends(get_auth_gateway),
@@ -58,7 +57,7 @@ async def refresh_factus_token(
     """
     try:
         data = await gateway.refresh_token(request.refresh_token)
-        return ApiResponse(message="Token refrescado exitosamente", data=data)
+        return data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:

@@ -48,7 +48,7 @@ class TestCreateInvoice:
 
         client = TestClient(app)
         response = client.post(
-            "/api/v1/invoices/",
+            "/api/invoices/",
             json=VALID_INVOICE_PAYLOAD,
             headers=FACTUS_TOKEN_HEADER,
         )
@@ -56,9 +56,8 @@ class TestCreateInvoice:
         app.dependency_overrides.clear()
         assert response.status_code == 200
         body = response.json()
-        assert body["success"] is True
-        assert body["data"]["number"] == "SETT-1"
-        assert body["data"]["cufe"] == "abc123cufe"
+        assert body["number"] == "SETT-1"
+        assert body["cufe"] == "abc123cufe"
 
     def test_create_invoice_propagates_factus_status_code(self):
         from app.api.v1.endpoints.invoices import get_invoice_gateway
@@ -73,7 +72,7 @@ class TestCreateInvoice:
 
         client = TestClient(app)
         response = client.post(
-            "/api/v1/invoices/",
+            "/api/invoices/",
             json=VALID_INVOICE_PAYLOAD,
             headers=FACTUS_TOKEN_HEADER,
         )
@@ -85,7 +84,7 @@ class TestCreateInvoice:
         app.dependency_overrides.clear()
         client = TestClient(app)
         response = client.post(
-            "/api/v1/invoices/",
+            "/api/invoices/",
             json=VALID_INVOICE_PAYLOAD,
             headers=FACTUS_TOKEN_HEADER,
         )
@@ -94,7 +93,7 @@ class TestCreateInvoice:
     def test_create_invoice_requires_factus_token_header(self):
         app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         client = TestClient(app)
-        response = client.post("/api/v1/invoices/", json=VALID_INVOICE_PAYLOAD)
+        response = client.post("/api/invoices/", json=VALID_INVOICE_PAYLOAD)
         app.dependency_overrides.clear()
         assert response.status_code == 422
 
@@ -105,7 +104,7 @@ class TestCreateInvoice:
         stringified_payload = '{"document": "01", "customer": {"identification_document_id": 3, "identification": "123"}, "items": [{"code_reference": "ref", "name": "item"}]}'
         
         response = client.post(
-            "/api/v1/invoices/",
+            "/api/invoices/",
             json=stringified_payload,
             headers={"x-factus-token": "fake-factus-token"},
         )
@@ -131,7 +130,7 @@ class TestGetInvoice:
         app.dependency_overrides[get_invoice_gateway] = lambda: mock_gw
 
         client = TestClient(app)
-        response = client.get("/api/v1/invoices/SETT-1", headers=FACTUS_TOKEN_HEADER)
+        response = client.get("/api/invoices/SETT-1", headers=FACTUS_TOKEN_HEADER)
 
         app.dependency_overrides.clear()
         assert response.status_code == 200
@@ -148,7 +147,7 @@ class TestGetInvoice:
         app.dependency_overrides[get_invoice_gateway] = lambda: mock_gw
 
         client = TestClient(app)
-        response = client.get("/api/v1/invoices/SETT-999", headers=FACTUS_TOKEN_HEADER)
+        response = client.get("/api/invoices/SETT-999", headers=FACTUS_TOKEN_HEADER)
 
         app.dependency_overrides.clear()
         assert response.status_code == 404
@@ -169,11 +168,11 @@ class TestDownloadInvoice:
         app.dependency_overrides[get_invoice_gateway] = lambda: mock_gw
 
         client = TestClient(app)
-        response = client.get("/api/v1/invoices/SETT-1/pdf", headers=FACTUS_TOKEN_HEADER)
+        response = client.get("/api/invoices/SETT-1/pdf", headers=FACTUS_TOKEN_HEADER)
 
         app.dependency_overrides.clear()
         assert response.status_code == 200
-        assert response.json()["data"]["extension"] == "pdf"
+        assert response.json()["extension"] == "pdf"
 
     def test_download_xml_success(self):
         from app.api.v1.endpoints.invoices import get_invoice_gateway
@@ -189,11 +188,11 @@ class TestDownloadInvoice:
         app.dependency_overrides[get_invoice_gateway] = lambda: mock_gw
 
         client = TestClient(app)
-        response = client.get("/api/v1/invoices/SETT-1/xml", headers=FACTUS_TOKEN_HEADER)
+        response = client.get("/api/invoices/SETT-1/xml", headers=FACTUS_TOKEN_HEADER)
 
         app.dependency_overrides.clear()
         assert response.status_code == 200
-        assert response.json()["data"]["extension"] == "xml"
+        assert response.json()["extension"] == "xml"
 
 
 class TestDeleteInvoice:
@@ -211,7 +210,7 @@ class TestDeleteInvoice:
 
         client = TestClient(app)
         response = client.delete(
-            "/api/v1/invoices/reference/REF-001",
+            "/api/invoices/reference/REF-001",
             headers=FACTUS_TOKEN_HEADER,
         )
 
@@ -231,7 +230,7 @@ class TestDeleteInvoice:
 
         client = TestClient(app)
         response = client.delete(
-            "/api/v1/invoices/reference/REF-001",
+            "/api/invoices/reference/REF-001",
             headers=FACTUS_TOKEN_HEADER,
         )
 
@@ -254,7 +253,7 @@ class TestSendEmail:
 
         client = TestClient(app)
         response = client.post(
-            "/api/v1/invoices/SETT-1/send-email",
+            "/api/invoices/SETT-1/send-email",
             json={"email": "cliente@example.com"},
             headers=FACTUS_TOKEN_HEADER,
         )
@@ -279,7 +278,7 @@ class TestGetInvoiceEvents:
 
         client = TestClient(app)
         response = client.get(
-            "/api/v1/invoices/SETT-1/events",
+            "/api/invoices/SETT-1/events",
             headers=FACTUS_TOKEN_HEADER,
         )
 

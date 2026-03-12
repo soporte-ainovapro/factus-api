@@ -15,7 +15,7 @@ REST API built with FastAPI that acts as a secure intermediary for the [Factus](
 - Reference data lookups (municipalities, taxes, units, numbering ranges, countries)
 - Static DIAN reference tables in a single endpoint (no Factus token required)
 - Acquirer lookup via DIAN — autocomplete customer data by document number
-- Standardized `ApiResponse[T]` envelope on all responses
+- Acquirer lookup via DIAN — autocomplete customer data by document number
 
 ## Requirements
 
@@ -197,16 +197,16 @@ Queries the DIAN directly to retrieve the name and email of a customer by docume
 
 Query params: `identification_document_id` (int) and `identification_number` (string).
 
-### Response envelope
+### Response format
 
-All endpoints (except `POST /auth/login`) return:
+All endpoints (except `POST /auth/login`) return the raw JSON model directly. For example, creating an invoice returns:
 
 ```json
 {
-  "success": true,
-  "message": "Factura creada exitosamente",
-  "data": { ... },
-  "errors": null
+  "sale_id": 1,
+  "sale_number": "VEN-0001",
+  "factus_invoice_number": "SETP990000001",
+  ...
 }
 ```
 

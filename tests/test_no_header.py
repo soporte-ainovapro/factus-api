@@ -2,7 +2,7 @@ import httpx
 import json
 import asyncio
 
-BASE_URL = "http://127.0.0.1:8000/api/v1"
+BASE_URL = "http://127.0.0.1:8000/api"
 
 async def test_no_header():
     try:

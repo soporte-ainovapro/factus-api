@@ -64,7 +64,7 @@ def test_get_numbering_ranges(override_gateway):
         status="OK", message="Success", data=[mock_range]
     )
     
-    response = client.get("/api/v1/numbering-ranges", headers={"x-factus-token": "test-token", "Authorization": "Bearer test-jwt"})
+    response = client.get("/api/numbering-ranges", headers={"x-factus-token": "test-token", "Authorization": "Bearer test-jwt"})
     
     # Just asserting the structure is correctly wired since Auth might fail in pure client test without deep mocking
     # If the app blocks without a real JWT, we'll need to mock `get_current_user` too.
@@ -79,7 +79,7 @@ def test_get_numbering_range_by_id(override_gateway):
     override_gateway.get_numbering_range.return_value = NumberingRangeResponse(
         status="OK", message="Success", data=mock_range
     )
-    response = client.get("/api/v1/numbering-ranges/1", headers={"x-factus-token": "test-token"})
+    response = client.get("/api/numbering-ranges/1", headers={"x-factus-token": "test-token"})
     assert response.status_code in [200, 401]
 
 def test_create_numbering_range(override_gateway):
@@ -91,7 +91,7 @@ def test_create_numbering_range(override_gateway):
     override_gateway.create_numbering_range.return_value = NumberingRangeResponse(
         status="Created", message="Success", data=mock_range
     )
-    response = client.post("/api/v1/numbering-ranges", json={"document": "21", "prefix": "FV", "current": 1, "resolution_number": "123"}, headers={"x-factus-token": "test-token"})
+    response = client.post("/api/numbering-ranges", json={"document": "21", "prefix": "FV", "current": 1, "resolution_number": "123"}, headers={"x-factus-token": "test-token"})
     assert response.status_code in [200, 201, 401]
 
 def test_update_numbering_range(override_gateway):
@@ -103,14 +103,14 @@ def test_update_numbering_range(override_gateway):
     override_gateway.update_numbering_range_consecutive.return_value = NumberingRangeResponse(
         status="OK", message="Success", data=mock_range
     )
-    response = client.put("/api/v1/numbering-ranges/1", json={"current": 5}, headers={"x-factus-token": "test-token"})
+    response = client.put("/api/numbering-ranges/1", json={"current": 5}, headers={"x-factus-token": "test-token"})
     assert response.status_code in [200, 401]
 
 def test_delete_numbering_range(override_gateway):
     override_gateway.delete_numbering_range.return_value = NumberingRangeDeleteResponse(
         status="OK", message="Eliminado exitosamente"
     )
-    response = client.delete("/api/v1/numbering-ranges/1", headers={"x-factus-token": "test-token"})
+    response = client.delete("/api/numbering-ranges/1", headers={"x-factus-token": "test-token"})
     assert response.status_code in [200, 401]
 
 def test_get_software_numbering_ranges(override_gateway):
@@ -120,7 +120,7 @@ def test_get_software_numbering_ranges(override_gateway):
     override_gateway.get_software_numbering_ranges.return_value = NumberingRangeSoftwareResponse(
         status="OK", message="Success", data=[mock_range]
     )
-    response = client.get("/api/v1/numbering-ranges/software", headers={"x-factus-token": "test-token"})
+    response = client.get("/api/numbering-ranges/software", headers={"x-factus-token": "test-token"})
     assert response.status_code in [200, 401]
 
 

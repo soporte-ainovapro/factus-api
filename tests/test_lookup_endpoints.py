@@ -26,33 +26,33 @@ def get_test_client() -> TestClient:
 
 
 # ---------------------------------------------------------------------------
-# GET /api/v1/lookups/reference-tables
+# GET /api/lookups/reference-tables
 # ---------------------------------------------------------------------------
 
 class TestGetReferenceTables:
     def test_returns_all_tables(self):
         client = get_test_client()
-        response = client.get("/api/v1/lookups/reference-tables")
+        response = client.get("/api/lookups/reference-tables")
         app.dependency_overrides.clear()
 
         assert response.status_code == 200
         body = response.json()
-        assert body["success"] is True
-        data = body["data"]
-        assert "identification_document_types" in data
-        assert "payment_methods" in data
-        assert "payment_forms" in data
-        assert len(data["identification_document_types"]) == 11
+        assert "identification_document_types" in body
+        assert "payment_methods" in body
+        assert "payment_forms" in body
+        assert "legal_organization_types" in body
+        assert "customer_tribute_types" in body
+        assert len(body["identification_document_types"]) == 11
 
     def test_requires_local_jwt(self):
         app.dependency_overrides.clear()
         client = TestClient(app)
-        response = client.get("/api/v1/lookups/reference-tables")
+        response = client.get("/api/lookups/reference-tables")
         assert response.status_code == 401
 
 
 # ---------------------------------------------------------------------------
-# GET /api/v1/lookups/municipalities
+# GET /api/lookups/municipalities
 # ---------------------------------------------------------------------------
 
 class TestGetMunicipalitiesEndpoint:
@@ -68,11 +68,11 @@ class TestGetMunicipalitiesEndpoint:
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)
-        response = client.get("/api/v1/lookups/municipalities", headers=FACTUS_TOKEN_HEADER)
+        response = client.get("/api/lookups/municipalities", headers=FACTUS_TOKEN_HEADER)
 
         app.dependency_overrides.clear()
         assert response.status_code == 200
-        assert response.json()["data"][0]["name"] == "Bogotá"
+        assert response.json()[0]["name"] == "Bogotá"
 
     def test_propagates_factus_error(self):
         from app.api.v1.endpoints.lookups import get_lookup_gateway
@@ -86,14 +86,14 @@ class TestGetMunicipalitiesEndpoint:
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)
-        response = client.get("/api/v1/lookups/municipalities", headers=FACTUS_TOKEN_HEADER)
+        response = client.get("/api/lookups/municipalities", headers=FACTUS_TOKEN_HEADER)
 
         app.dependency_overrides.clear()
         assert response.status_code == 401
 
 
 # ---------------------------------------------------------------------------
-# GET /api/v1/lookups/taxes
+# GET /api/lookups/taxes
 # ---------------------------------------------------------------------------
 
 class TestGetTaxesEndpoint:
@@ -109,15 +109,15 @@ class TestGetTaxesEndpoint:
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)
-        response = client.get("/api/v1/lookups/taxes", headers=FACTUS_TOKEN_HEADER)
+        response = client.get("/api/lookups/taxes", headers=FACTUS_TOKEN_HEADER)
 
         app.dependency_overrides.clear()
         assert response.status_code == 200
-        assert response.json()["data"][0]["code"] == "01"
+        assert response.json()[0]["code"] == "01"
 
 
 # ---------------------------------------------------------------------------
-# GET /api/v1/lookups/countries
+# GET /api/lookups/countries
 # ---------------------------------------------------------------------------
 
 class TestGetCountriesEndpoint:
@@ -133,11 +133,11 @@ class TestGetCountriesEndpoint:
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)
-        response = client.get("/api/v1/lookups/countries", headers=FACTUS_TOKEN_HEADER)
+        response = client.get("/api/lookups/countries", headers=FACTUS_TOKEN_HEADER)
 
         app.dependency_overrides.clear()
         assert response.status_code == 200
-        assert response.json()["data"][0]["code"] == "CO"
+        assert response.json()[0]["code"] == "CO"
 
     def test_passes_name_filter(self):
         from app.api.v1.endpoints.lookups import get_lookup_gateway
@@ -149,7 +149,7 @@ class TestGetCountriesEndpoint:
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)
-        client.get("/api/v1/lookups/countries?name=Colombia", headers=FACTUS_TOKEN_HEADER)
+        client.get("/api/lookups/countries?name=Colombia", headers=FACTUS_TOKEN_HEADER)
 
         app.dependency_overrides.clear()
         mock_gw.get_countries.assert_awaited_once_with("fake-factus-token", name="Colombia")
@@ -166,14 +166,14 @@ class TestGetCountriesEndpoint:
         app.dependency_overrides[get_lookup_gateway] = lambda: mock_gw
 
         client = TestClient(app)
-        response = client.get("/api/v1/lookups/countries", headers=FACTUS_TOKEN_HEADER)
+        response = client.get("/api/lookups/countries", headers=FACTUS_TOKEN_HEADER)
 
         app.dependency_overrides.clear()
         assert response.status_code == 401
 
 
 # ---------------------------------------------------------------------------
-# GET /api/v1/lookups/acquirer
+# GET /api/lookups/acquirer
 # ---------------------------------------------------------------------------
 
 class TestGetAcquirerEndpoint:
@@ -191,19 +191,19 @@ class TestGetAcquirerEndpoint:
 
         client = TestClient(app)
         response = client.get(
-            "/api/v1/lookups/acquirer?identification_document_id=6&identification_number=900123456",
+            "/api/lookups/acquirer?identification_document_id=6&identification_number=900123456",
             headers=FACTUS_TOKEN_HEADER,
         )
 
         app.dependency_overrides.clear()
         assert response.status_code == 200
         body = response.json()
-        assert body["data"]["name"] == "Empresa ABC"
-        assert body["data"]["email"] == "abc@empresa.com"
+        assert body["name"] == "Empresa ABC"
+        assert body["email"] == "abc@empresa.com"
 
     def test_missing_required_params_returns_422(self):
         client = get_test_client()
-        response = client.get("/api/v1/lookups/acquirer", headers=FACTUS_TOKEN_HEADER)
+        response = client.get("/api/lookups/acquirer", headers=FACTUS_TOKEN_HEADER)
         app.dependency_overrides.clear()
         assert response.status_code == 422
 
@@ -220,7 +220,7 @@ class TestGetAcquirerEndpoint:
 
         client = TestClient(app)
         response = client.get(
-            "/api/v1/lookups/acquirer?identification_document_id=6&identification_number=000000000",
+            "/api/lookups/acquirer?identification_document_id=6&identification_number=000000000",
             headers=FACTUS_TOKEN_HEADER,
         )
 

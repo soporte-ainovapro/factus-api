@@ -41,7 +41,7 @@ class TestFactusLogin:
 
         client = TestClient(app)
         response = client.post(
-            "/api/v1/auth/factus/login",
+            "/api/auth/factus/login",
             json={"email": "sandbox@factus.com.co", "password": "sandbox2024%"},
             headers=VALID_API_KEY_HEADER,
         )
@@ -49,16 +49,15 @@ class TestFactusLogin:
         app.dependency_overrides.clear()
         assert response.status_code == 200
         body = response.json()
-        assert body["success"] is True
-        assert body["data"]["access_token"] == "factus-access"
-        assert body["data"]["refresh_token"] == "factus-refresh"
+        assert body["access_token"] == "factus-access"
+        assert body["refresh_token"] == "factus-refresh"
 
     def test_factus_login_requires_api_key(self):
         """Without X-API-Key header, the endpoint must return 403."""
         app.dependency_overrides.clear()
         client = TestClient(app)
         response = client.post(
-            "/api/v1/auth/factus/login",
+            "/api/auth/factus/login",
             json={"email": "sandbox@factus.com.co", "password": "sandbox2024%"},
         )
         # 401 Unauthorized — missing API Key
@@ -69,7 +68,7 @@ class TestFactusLogin:
         app.dependency_overrides.clear()
         client = TestClient(app)
         response = client.post(
-            "/api/v1/auth/factus/login",
+            "/api/auth/factus/login",
             json={"email": "sandbox@factus.com.co", "password": "sandbox2024%"},
             headers={"X-API-Key": "wrong-key"},
         )
@@ -78,7 +77,7 @@ class TestFactusLogin:
     def test_factus_login_invalid_email(self):
         client = get_auth_client()
         response = client.post(
-            "/api/v1/auth/factus/login",
+            "/api/auth/factus/login",
             json={"email": "not-an-email", "password": "pass"},
             headers=VALID_API_KEY_HEADER,
         )
@@ -91,7 +90,7 @@ class TestFactusRefresh:
         app.dependency_overrides.clear()
         client = TestClient(app)
         response = client.post(
-            "/api/v1/auth/factus/refresh",
+            "/api/auth/factus/refresh",
             json={"refresh_token": "some-token"},
         )
         assert response.status_code == 401
@@ -99,7 +98,7 @@ class TestFactusRefresh:
     def test_refresh_missing_body(self):
         client = get_auth_client()
         response = client.post(
-            "/api/v1/auth/factus/refresh",
+            "/api/auth/factus/refresh",
             json={},
             headers=VALID_API_KEY_HEADER,
         )
@@ -117,7 +116,7 @@ class TestFactusRefresh:
 
         client = TestClient(app)
         response = client.post(
-            "/api/v1/auth/factus/refresh",
+            "/api/auth/factus/refresh",
             json={"refresh_token": "factus-refresh"},
             headers=VALID_API_KEY_HEADER,
         )
@@ -125,5 +124,4 @@ class TestFactusRefresh:
         app.dependency_overrides.clear()
         assert response.status_code == 200
         body = response.json()
-        assert body["success"] is True
-        assert body["data"]["access_token"] == "factus-access"
+        assert body["access_token"] == "factus-access"

@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from typing import List, Optional
-from app.core.responses import ApiResponse
 from app.domain.exceptions import FactusAPIError
 from app.domain.models.lookup import (
     Municipality,
@@ -79,7 +78,7 @@ def get_lookup_gateway() -> FactusLookupGateway:
     return FactusLookupGateway(base_url=settings.FACTUS_BASE_URL)
 
 
-@router.get("/reference-tables", response_model=ApiResponse[ReferenceTables])
+@router.get("/reference-tables", response_model=ReferenceTables)
 async def get_reference_tables(
     _: str = Depends(verify_api_key)
 ):
@@ -89,13 +88,10 @@ async def get_reference_tables(
     Incluye: tipos de documento, organización legal, tributos de clientes,
     métodos de pago, formas de pago, estándares de producto y tipos de documento.
     """
-    return ApiResponse(
-        message="Tablas de referencia obtenidas exitosamente",
-        data=_REFERENCE_TABLES
-    )
+    return _REFERENCE_TABLES
 
 
-@router.get("/municipalities", response_model=ApiResponse[List[Municipality]])
+@router.get("/municipalities", response_model=List[Municipality])
 async def get_municipalities(
     x_factus_token: str = Header(...),
     gateway: FactusLookupGateway = Depends(get_lookup_gateway),
@@ -103,14 +99,14 @@ async def get_municipalities(
 ):
     try:
         data = await gateway.get_municipalities(x_factus_token)
-        return ApiResponse(message="Municipios obtenidos exitosamente", data=data)
+        return data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
-@router.get("/taxes", response_model=ApiResponse[List[Tax]])
+@router.get("/taxes", response_model=List[Tax])
 async def get_taxes(
     x_factus_token: str = Header(...),
     gateway: FactusLookupGateway = Depends(get_lookup_gateway),
@@ -118,14 +114,14 @@ async def get_taxes(
 ):
     try:
         data = await gateway.get_tax_types(x_factus_token)
-        return ApiResponse(message="Tipos de impuesto obtenidos exitosamente", data=data)
+        return data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
-@router.get("/units", response_model=ApiResponse[List[Unit]])
+@router.get("/units", response_model=List[Unit])
 async def get_units(
     x_factus_token: str = Header(...),
     gateway: FactusLookupGateway = Depends(get_lookup_gateway),
@@ -133,7 +129,7 @@ async def get_units(
 ):
     try:
         data = await gateway.get_units(x_factus_token)
-        return ApiResponse(message="Unidades obtenidas exitosamente", data=data)
+        return data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
@@ -141,7 +137,7 @@ async def get_units(
 
 
 
-@router.get("/countries", response_model=ApiResponse[List[Country]])
+@router.get("/countries", response_model=List[Country])
 async def get_countries(
     x_factus_token: str = Header(...),
     name: Optional[str] = Query(None, description="Filtrar por nombre del país"),
@@ -150,14 +146,14 @@ async def get_countries(
 ):
     try:
         data = await gateway.get_countries(x_factus_token, name=name)
-        return ApiResponse(message="Países obtenidos exitosamente", data=data)
+        return data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
-@router.get("/acquirer", response_model=ApiResponse[Acquirer])
+@router.get("/acquirer", response_model=Acquirer)
 async def get_acquirer(
     x_factus_token: str = Header(...),
     identification_document_id: int = Query(
@@ -179,7 +175,7 @@ async def get_acquirer(
             identification_document_id=identification_document_id,
             identification_number=identification_number
         )
-        return ApiResponse(message="Datos del adquiriente obtenidos exitosamente", data=data)
+        return data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:

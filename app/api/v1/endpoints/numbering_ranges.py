@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Header, Query
 from typing import Optional, List
-from app.core.responses import ApiResponse
 from app.domain.exceptions import FactusAPIError
 from app.domain.models.numbering_range import (
     NumberingRange,
@@ -22,7 +21,7 @@ router = APIRouter()
 def get_numbering_range_gateway() -> FactusNumberingRangeGateway:
     return FactusNumberingRangeGateway(base_url=settings.FACTUS_BASE_URL)
 
-@router.get("/", response_model=ApiResponse[List[NumberingRange]])
+@router.get("/", response_model=List[NumberingRange])
 async def get_numbering_ranges(
     x_factus_token: str = Header(...),
     id: Optional[int] = Query(None, description="Filtrar por id"),
@@ -42,13 +41,13 @@ async def get_numbering_ranges(
             "is_active": is_active
         }
         resp = await gateway.get_numbering_ranges(x_factus_token, filters=filters)
-        return ApiResponse(message="Rangos de numeración obtenidos exitosamente", data=resp.data if resp.data else [])
+        return resp.data if resp.data else []
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
-@router.get("/software", response_model=ApiResponse[List[NumberingRangeSoftware]])
+@router.get("/software", response_model=List[NumberingRangeSoftware])
 async def get_software_numbering_ranges(
     x_factus_token: str = Header(...),
     gateway: FactusNumberingRangeGateway = Depends(get_numbering_range_gateway),
@@ -56,13 +55,13 @@ async def get_software_numbering_ranges(
 ):
     try:
         resp = await gateway.get_software_numbering_ranges(x_factus_token)
-        return ApiResponse(message="Rangos de numeración asociados al software obtenidos exitosamente", data=resp.data if resp.data else [])
+        return resp.data if resp.data else []
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
-@router.get("/{id}", response_model=ApiResponse[NumberingRange])
+@router.get("/{id}", response_model=NumberingRange)
 async def get_numbering_range(
     id: int,
     x_factus_token: str = Header(...),
@@ -71,13 +70,13 @@ async def get_numbering_range(
 ):
     try:
         resp = await gateway.get_numbering_range(id, x_factus_token)
-        return ApiResponse(message="Rango de numeración obtenido exitosamente", data=resp.data)
+        return resp.data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
-@router.post("/", response_model=ApiResponse[NumberingRange])
+@router.post("/", response_model=NumberingRange)
 async def create_numbering_range(
     range_data: NumberingRangeCreate,
     x_factus_token: str = Header(...),
@@ -86,13 +85,13 @@ async def create_numbering_range(
 ):
     try:
         resp = await gateway.create_numbering_range(range_data, x_factus_token)
-        return ApiResponse(message="Rango de numeración creado exitosamente", data=resp.data)
+        return resp.data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
-@router.put("/{id}", response_model=ApiResponse[NumberingRange])
+@router.put("/{id}", response_model=NumberingRange)
 async def update_numbering_range_consecutive(
     id: int,
     update_data: NumberingRangeUpdate,
@@ -102,13 +101,13 @@ async def update_numbering_range_consecutive(
 ):
     try:
         resp = await gateway.update_numbering_range_consecutive(id, update_data, x_factus_token)
-        return ApiResponse(message="Consecutivo de rango actualizado exitosamente", data=resp.data)
+        return resp.data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
-@router.delete("/{id}", response_model=ApiResponse[dict])
+@router.delete("/{id}", response_model=dict)
 async def delete_numbering_range(
     id: int,
     x_factus_token: str = Header(...),
@@ -117,7 +116,7 @@ async def delete_numbering_range(
 ):
     try:
         resp = await gateway.delete_numbering_range(id, x_factus_token)
-        return ApiResponse(message="Rango de numeración eliminado exitosamente", data={"status": resp.status})
+        return {"status": resp.status}
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:

@@ -2,7 +2,7 @@ import httpx
 import asyncio
 import json
 
-BASE_URL = "http://127.0.0.1:8000/api/v1"
+BASE_URL = "http://127.0.0.1:8000/api"
 
 payload = {
     "document": "01",

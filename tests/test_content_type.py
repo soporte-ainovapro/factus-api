@@ -1,7 +1,7 @@
 import httpx
 import asyncio
 
-BASE_URL = "http://127.0.0.1:8000/api/v1"
+BASE_URL = "http://127.0.0.1:8000/api"
 
 async def test():
     async with httpx.AsyncClient() as client:

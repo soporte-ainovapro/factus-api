@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, Depends, Header, UploadFile, File
-from app.core.responses import ApiResponse
 from app.domain.exceptions import FactusAPIError
 from app.domain.models.company import (
     CompanyData,
@@ -16,7 +15,7 @@ router = APIRouter()
 def get_company_gateway() -> FactusCompanyGateway:
     return FactusCompanyGateway(base_url=settings.FACTUS_BASE_URL)
 
-@router.get("/", response_model=ApiResponse[CompanyData])
+@router.get("/", response_model=CompanyData)
 async def get_company(
     x_factus_token: str = Header(...),
     gateway: FactusCompanyGateway = Depends(get_company_gateway),
@@ -24,13 +23,13 @@ async def get_company(
 ):
     try:
         resp = await gateway.get_company(x_factus_token)
-        return ApiResponse(message="Empresa obtenida exitosamente", data=resp.data)
+        return resp.data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
-@router.put("/", response_model=ApiResponse[CompanyData])
+@router.put("/", response_model=CompanyData)
 async def update_company(
     company: CompanyUpdate,
     x_factus_token: str = Header(...),
@@ -39,13 +38,13 @@ async def update_company(
 ):
     try:
         resp = await gateway.update_company(company, x_factus_token)
-        return ApiResponse(message="Empresa actualizada exitosamente", data=resp.data)
+        return resp.data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
-@router.post("/logo", response_model=ApiResponse[LogoData])
+@router.post("/logo", response_model=LogoData)
 async def update_company_logo(
     image: UploadFile = File(...),
     x_factus_token: str = Header(...),
@@ -60,7 +59,7 @@ async def update_company_logo(
             file_content_type=image.content_type,
             token=x_factus_token
         )
-        return ApiResponse(message="Logo de la empresa actualizado exitosamente", data=resp.data)
+        return resp.data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
