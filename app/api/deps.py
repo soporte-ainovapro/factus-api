@@ -8,7 +8,9 @@ configured in backend-app-baiji.
 """
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import APIKeyHeader
+
 from app.core.config import settings
+from app.domain.interfaces.invoice_gateway import IInvoiceGateway
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
 
@@ -24,3 +26,18 @@ async def verify_api_key(api_key: str = Security(api_key_header)) -> str:
             detail="API Key inválida o ausente.",
         )
     return api_key
+
+
+def get_invoice_gateway() -> IInvoiceGateway:
+    """
+    Retorna el gateway de facturación según el proveedor configurado.
+    Añadir nuevos proveedores aquí es el único cambio necesario para soportarlos.
+    """
+    if settings.BILLING_PROVIDER == "factus":
+        from app.infrastructure.gateways.factus_invoice_gateway import FactusInvoiceGateway
+        return FactusInvoiceGateway(base_url=settings.FACTUS_BASE_URL)
+
+    raise ValueError(
+        f"Proveedor de facturación no soportado: '{settings.BILLING_PROVIDER}'. "
+        "Valores válidos: 'factus'"
+    )

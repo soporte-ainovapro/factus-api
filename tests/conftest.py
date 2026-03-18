@@ -28,7 +28,6 @@ def client() -> TestClient:
     verify_api_key dependency. Use this for endpoint tests that should
     not be blocked by auth.
     """
-    # Override the auth dependency so tests don't need a real API key
     app.dependency_overrides[verify_api_key] = lambda: TEST_API_KEY
 
     with TestClient(app) as c:
@@ -60,19 +59,20 @@ def mock_httpx_response(status_code: int, json_body: dict) -> MagicMock:
 
 
 # ---------------------------------------------------------------------------
-# Minimal valid Invoice payload (dict form, used in endpoint tests)
+# Minimal valid Invoice payload (canonical fields, used in endpoint tests)
 # ---------------------------------------------------------------------------
 
 VALID_INVOICE_PAYLOAD = {
-    "document": "01",
+    "numbering_range_prefix": "SETT",
+    "document_type": "invoice",
     "reference_code": "REF-TEST-001",
-    "payment_form": "1",
+    "payment_form": "cash",
     "payment_method_code": "10",
     "customer": {
-        "identification_document_id": 3,
+        "document_type": "CC",
         "identification": "900123456",
-        "legal_organization_id": 1,
-        "tribute_id": 21,
+        "organization_type": "person",
+        "tribute": "ZZ",
         "names": "Juan Perez",
         "email": "juan@example.com",
     },
@@ -84,10 +84,10 @@ VALID_INVOICE_PAYLOAD = {
             "price": "10000.00",
             "discount_rate": "0.00",
             "tax_rate": "19.00",
-            "unit_measure_id": 70,
-            "standard_code_id": 1,
-            "is_excluded": 0,
-            "tribute_id": 21,
+            "unit_measure_code": "94",
+            "standard_code": "1",
+            "is_excluded": False,
+            "tribute": "IVA",
         }
     ],
 }

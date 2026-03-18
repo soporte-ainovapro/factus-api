@@ -5,18 +5,31 @@ from app.domain.models.customer import Customer
 from app.domain.models.establishment import Establishment
 from app.domain.models.item import Item
 from app.domain.models.shared import BillingPeriod, AllowanceCharge
+from app.domain.models.enums import CorrectionConcept
+
 
 class CreditNote(BaseModel):
-    numbering_range_id: int
-    correction_concept_code: int = Field(..., description="1: Devolución parcial, 2: Anulación factura, 3: Rebaja, 4: Descuento, etc.")
-    customization_id: int = Field(default=20, description="20: Nota de crédito que referencia una factura electrónica. 22: Nota crédito sin referencia a facturas.")
-    
-    bill_id: Optional[int] = None
+    """
+    Nota crédito electrónica en términos del dominio del negocio.
+    Usa valores canónicos independientes del proveedor.
+    """
+
+    numbering_range_prefix: str   # Prefijo del rango (ej "NC"). El adaptador resuelve el ID.
+
+    correction_concept: CorrectionConcept = Field(
+        ...,
+        description="Motivo de la nota crédito"
+    )
+
+    # Si references_invoice=True, bill_reference_number es obligatorio
+    references_invoice: bool = True
+    bill_reference_number: Optional[str] = None   # Número de factura original (ej "SETT-5")
+
     reference_code: str
     observation: Optional[str] = None
-    
+
     payment_method_code: str = Field(default="10")
-    send_email: Optional[int] = Field(default=None, description="1 para enviar email, 0 para no enviar (o booleano según Factus). Factus a veces usa bool 0/1.")
+    send_email: Optional[bool] = None
 
     billing_period: Optional[BillingPeriod] = None
     establishment: Optional[Establishment] = None
@@ -28,6 +41,8 @@ class CreditNote(BaseModel):
     def validate_credit_note(self):
         if not self.items:
             raise ValueError("Credit note must contain at least one item")
-        if self.customization_id == 20 and not self.bill_id:
-            raise ValueError("bill_id es obligatorio para notas crédito que referencian facturas (customization_id=20)")
+        if self.references_invoice and not self.bill_reference_number:
+            raise ValueError(
+                "bill_reference_number es obligatorio cuando references_invoice=True"
+            )
         return self

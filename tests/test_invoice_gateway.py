@@ -2,21 +2,38 @@
 Unit tests for FactusInvoiceGateway.
 
 All HTTP calls are mocked — no real network requests.
+
+The `create_invoice` method now calls `_resolve_numbering_range_id` first,
+so tests that test create_invoice patch `httpx.AsyncClient` to handle
+both the GET (lookup) and POST (create) calls via side_effect ordering.
 """
 import pytest
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.infrastructure.gateways.factus_invoice_gateway import FactusInvoiceGateway
+from app.domain.interfaces.invoice_gateway import SendEmailRequest
 from app.domain.models.invoice import Invoice
 from app.domain.models.customer import Customer
 from app.domain.models.item import Item as InvoiceItem
-from app.api.v1.schemas.invoice import (
-    SendEmailRequest, InvoiceEventsResponse,
+from app.domain.models.results import InvoiceEventsResult
+from app.domain.models.enums import (
+    DocumentType, PaymentForm,
+    IdentificationDocumentType, LegalOrganizationType, TributeType,
 )
 
 BASE_URL = "https://api-sandbox.factus.com.co"
 TOKEN = "fake-factus-token"
+
+# Factus response for numbering_range lookup (list of active ranges)
+MOCK_RANGES_RESPONSE = {
+    "data": {
+        "data": [
+            {"id": 8, "prefix": "SETT", "is_active": True},
+            {"id": 12, "prefix": "NC", "is_active": True},
+        ]
+    }
+}
 
 
 def make_gateway() -> FactusInvoiceGateway:
@@ -32,17 +49,28 @@ def mock_response(status_code: int, json_body: dict) -> MagicMock:
     return r
 
 
-def make_invoice(**overrides) -> Invoice:
-    """Build a minimal valid Invoice domain object."""
+def make_customer(**overrides) -> Customer:
+    """Build a minimal valid Customer domain object with canonical fields."""
     defaults = dict(
+        document_type=IdentificationDocumentType.CC,
+        identification="900123456",
+        organization_type=LegalOrganizationType.PERSON,
+        tribute=TributeType.NO_APLICA,
+        names="Test User",
+    )
+    defaults.update(overrides)
+    return Customer(**defaults)
+
+
+def make_invoice(**overrides) -> Invoice:
+    """Build a minimal valid Invoice domain object with canonical fields."""
+    defaults = dict(
+        numbering_range_prefix="SETT",
+        document_type=DocumentType.INVOICE,
         reference_code="REF-001",
-        customer=Customer(
-            identification_document_id=3,
-            identification="900123456",
-            legal_organization_id=1,
-            tribute_id=21,
-            names="Test User",
-        ),
+        payment_form=PaymentForm.CASH,
+        payment_method_code="10",
+        customer=make_customer(),
         items=[
             InvoiceItem(
                 code_reference="ITEM-001",
@@ -51,17 +79,36 @@ def make_invoice(**overrides) -> Invoice:
                 price=Decimal("5000.00"),
                 discount_rate=Decimal("0.00"),
                 tax_rate=Decimal("19.00"),
-                unit_measure_id=70,
-                standard_code_id=1,
-                is_excluded=0,
-                tribute_id=21,
+                unit_measure_code="94",
+                standard_code="1",
+                is_excluded=False,
+                tribute=TributeType.IVA,
             )
         ],
-        payment_form="1",
-        payment_method_code="10",
     )
     defaults.update(overrides)
     return Invoice(**defaults)
+
+
+def make_async_client_with_responses(*responses: MagicMock) -> MagicMock:
+    """
+    Returns a mock httpx.AsyncClient context manager whose methods (get, post, delete)
+    return responses in sequence via side_effect.
+    """
+    mock_client = AsyncMock()
+    resp_iter = iter(responses)
+
+    async def next_response(*args, **kwargs):
+        return next(resp_iter)
+
+    mock_client.get = AsyncMock(side_effect=next_response)
+    mock_client.post = AsyncMock(side_effect=next_response)
+    mock_client.delete = AsyncMock(side_effect=next_response)
+
+    mock_ctx = MagicMock()
+    mock_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_ctx.__aexit__ = AsyncMock(return_value=False)
+    return mock_ctx, mock_client
 
 
 # ---------------------------------------------------------------------------
@@ -70,9 +117,10 @@ def make_invoice(**overrides) -> Invoice:
 
 class TestCreateInvoice:
     @pytest.mark.asyncio
-    async def test_returns_invoice_response_on_success(self):
+    async def test_returns_invoice_result_on_success(self):
         gateway = make_gateway()
-        api_resp = {
+        ranges_resp = mock_response(200, MOCK_RANGES_RESPONSE)
+        create_resp = mock_response(200, {
             "message": "Factura creada",
             "data": {
                 "bill": {
@@ -83,17 +131,12 @@ class TestCreateInvoice:
                 },
                 "numbering_range": {"prefix": "SETT"},
             },
-        }
-        fake_resp = mock_response(200, api_resp)
+        })
 
-        mock_client = AsyncMock()
-        mock_client.post = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
-
+        mock_ctx, mock_client = make_async_client_with_responses(ranges_resp, create_resp)
         invoice = make_invoice()
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             result = await gateway.create_invoice(invoice, TOKEN)
 
         assert result.number == "SETT-1"
@@ -104,33 +147,97 @@ class TestCreateInvoice:
     @pytest.mark.asyncio
     async def test_sends_bearer_token_in_header(self):
         gateway = make_gateway()
-        api_resp = {
+        ranges_resp = mock_response(200, MOCK_RANGES_RESPONSE)
+        create_resp = mock_response(200, {
             "message": "ok",
             "data": {
-                "bill": {"number": "X1", "cufe": "", "qr": "", "status": "1"},
-                "numbering_range": {"prefix": "X"},
+                "bill": {"number": "SETT-1", "cufe": "", "qr": "", "status": "1"},
+                "numbering_range": {"prefix": "SETT"},
             },
-        }
-        fake_resp = mock_response(200, api_resp)
+        })
 
-        mock_client = AsyncMock()
-        mock_client.post = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
-
+        mock_ctx, mock_client = make_async_client_with_responses(ranges_resp, create_resp)
         invoice = make_invoice()
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             await gateway.create_invoice(invoice, TOKEN)
 
-        headers = mock_client.post.call_args.kwargs["headers"]
-        assert headers["Authorization"] == f"Bearer {TOKEN}"
+        # The POST call should have the Bearer token in its headers
+        post_headers = mock_client.post.call_args.kwargs["headers"]
+        assert post_headers["Authorization"] == f"Bearer {TOKEN}"
+
+    @pytest.mark.asyncio
+    async def test_maps_canonical_document_type_to_factus_code(self):
+        """Canonical DocumentType.INVOICE must be sent as '01' to Factus."""
+        gateway = make_gateway()
+        ranges_resp = mock_response(200, MOCK_RANGES_RESPONSE)
+        create_resp = mock_response(200, {
+            "message": "ok",
+            "data": {
+                "bill": {"number": "SETT-1", "cufe": "", "qr": "", "status": "1"},
+                "numbering_range": {"prefix": "SETT"},
+            },
+        })
+
+        mock_ctx, mock_client = make_async_client_with_responses(ranges_resp, create_resp)
+        invoice = make_invoice(document_type=DocumentType.INVOICE)
+
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
+            await gateway.create_invoice(invoice, TOKEN)
+
+        posted_payload = mock_client.post.call_args.kwargs["json"]
+        assert posted_payload["document"] == "01"
+
+    @pytest.mark.asyncio
+    async def test_maps_canonical_payment_form_to_factus_code(self):
+        """Canonical PaymentForm.CASH must be sent as '1' to Factus."""
+        gateway = make_gateway()
+        ranges_resp = mock_response(200, MOCK_RANGES_RESPONSE)
+        create_resp = mock_response(200, {
+            "message": "ok",
+            "data": {
+                "bill": {"number": "SETT-1", "cufe": "", "qr": "", "status": "1"},
+                "numbering_range": {"prefix": "SETT"},
+            },
+        })
+
+        mock_ctx, mock_client = make_async_client_with_responses(ranges_resp, create_resp)
+        invoice = make_invoice(payment_form=PaymentForm.CASH)
+
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
+            await gateway.create_invoice(invoice, TOKEN)
+
+        posted_payload = mock_client.post.call_args.kwargs["json"]
+        assert posted_payload["payment_form"] == "1"
+
+    @pytest.mark.asyncio
+    async def test_maps_canonical_document_type_to_factus_id(self):
+        """Canonical IdentificationDocumentType.CC must be sent as identification_document_id=3."""
+        gateway = make_gateway()
+        ranges_resp = mock_response(200, MOCK_RANGES_RESPONSE)
+        create_resp = mock_response(200, {
+            "message": "ok",
+            "data": {
+                "bill": {"number": "SETT-1", "cufe": "", "qr": "", "status": "1"},
+                "numbering_range": {"prefix": "SETT"},
+            },
+        })
+
+        mock_ctx, mock_client = make_async_client_with_responses(ranges_resp, create_resp)
+        invoice = make_invoice(customer=make_customer(document_type=IdentificationDocumentType.CC))
+
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
+            await gateway.create_invoice(invoice, TOKEN)
+
+        posted_payload = mock_client.post.call_args.kwargs["json"]
+        assert posted_payload["customer"]["identification_document_id"] == 3
 
     @pytest.mark.asyncio
     async def test_raises_422_with_field_errors(self):
         """422 errors show the per-field messages, not '{}' or a raw dict."""
         gateway = make_gateway()
-        fake_resp = mock_response(422, {
+        ranges_resp = mock_response(200, MOCK_RANGES_RESPONSE)
+        create_resp = mock_response(422, {
             "message": "El campo código de referencia es obligatorio. (and 1 more error)",
             "errors": {
                 "reference_code": ["El campo código de referencia es obligatorio."],
@@ -138,14 +245,10 @@ class TestCreateInvoice:
             }
         })
 
-        mock_client = AsyncMock()
-        mock_client.post = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
-
+        mock_ctx, _ = make_async_client_with_responses(ranges_resp, create_resp)
         invoice = make_invoice()
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             with pytest.raises(Exception) as exc_info:
                 await gateway.create_invoice(invoice, TOKEN)
 
@@ -157,38 +260,44 @@ class TestCreateInvoice:
     async def test_raises_409_with_conflict_message(self):
         """409 errors use the list-of-objects shape."""
         gateway = make_gateway()
-        fake_resp = mock_response(409, {
+        ranges_resp = mock_response(200, MOCK_RANGES_RESPONSE)
+        create_resp = mock_response(409, {
             "status": "Conflict",
             "errors": [{"code": 409, "message": "Se encontró una factura pendiente por enviar a la DIAN"}]
         })
 
-        mock_client = AsyncMock()
-        mock_client.post = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
-
+        mock_ctx, _ = make_async_client_with_responses(ranges_resp, create_resp)
         invoice = make_invoice()
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             with pytest.raises(Exception, match="Se encontró una factura pendiente"):
                 await gateway.create_invoice(invoice, TOKEN)
 
+    @pytest.mark.asyncio
+    async def test_raises_when_prefix_not_found(self):
+        """If the prefix isn't found in Factus ranges, raise FactusAPIError."""
+        gateway = make_gateway()
+        ranges_resp = mock_response(200, {"data": {"data": []}})  # empty list
+
+        mock_ctx, _ = make_async_client_with_responses(ranges_resp)
+        invoice = make_invoice(numbering_range_prefix="NONEXISTENT")
+
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
+            with pytest.raises(Exception, match="NONEXISTENT"):
+                await gateway.create_invoice(invoice, TOKEN)
+
     def test_invoice_rejects_credit_without_due_date(self):
-        """Invoice model enforces payment_due_date when payment_form is '2' (crédito)."""
+        """Invoice model enforces payment_due_date when payment_form is CREDIT."""
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError, match="payment_due_date"):
             Invoice(
+                numbering_range_prefix="SETT",
+                document_type=DocumentType.INVOICE,
                 reference_code="REF-001",
-                payment_form="2",
+                payment_form=PaymentForm.CREDIT,
                 payment_method_code="10",
-                customer=Customer(
-                    identification_document_id=3,
-                    identification="900123456",
-                    legal_organization_id=1,
-                    tribute_id=21,
-                    names="Test",
-                ),
+                customer=make_customer(),
                 items=[
                     InvoiceItem(
                         code_reference="I1",
@@ -197,10 +306,10 @@ class TestCreateInvoice:
                         price="1000.00",
                         discount_rate="0.00",
                         tax_rate="19.00",
-                        unit_measure_id=70,
-                        standard_code_id=1,
-                        is_excluded=0,
-                        tribute_id=1,
+                        unit_measure_code="94",
+                        standard_code="1",
+                        is_excluded=False,
+                        tribute=TributeType.IVA,
                     )
                 ],
             )
@@ -221,13 +330,9 @@ class TestDownload:
             }
         })
 
-        mock_client = AsyncMock()
-        mock_client.get = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_ctx, _ = make_async_client_with_responses(fake_resp)
 
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             result = await gateway.download_pdf("SETT-1", TOKEN)
 
         assert result.extension == "pdf"
@@ -244,13 +349,9 @@ class TestDownload:
             }
         })
 
-        mock_client = AsyncMock()
-        mock_client.get = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_ctx, _ = make_async_client_with_responses(fake_resp)
 
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             result = await gateway.download_xml("SETT-1", TOKEN)
 
         assert result.extension == "xml"
@@ -261,13 +362,9 @@ class TestDownload:
         gateway = make_gateway()
         fake_resp = mock_response(404, {"message": "Factura no encontrada"})
 
-        mock_client = AsyncMock()
-        mock_client.get = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_ctx, _ = make_async_client_with_responses(fake_resp)
 
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             with pytest.raises(Exception, match="Factura no encontrada"):
                 await gateway.download_pdf("NONEXISTENT", TOKEN)
 
@@ -279,13 +376,9 @@ class TestDownload:
             "data": {"pdf_base_64_encoded": "data=="}
         })
 
-        mock_client = AsyncMock()
-        mock_client.get = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_ctx, _ = make_async_client_with_responses(fake_resp)
 
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             result = await gateway.download_pdf("SETT-99", TOKEN)
 
         assert result.file_name == "SETT-99.pdf"
@@ -297,7 +390,7 @@ class TestDownload:
 
 class TestGetInvoice:
     @pytest.mark.asyncio
-    async def test_returns_invoice_data_response(self):
+    async def test_returns_invoice_data_result(self):
         gateway = make_gateway()
         api_resp = {
             "status": "200",
@@ -306,13 +399,9 @@ class TestGetInvoice:
         }
         fake_resp = mock_response(200, api_resp)
 
-        mock_client = AsyncMock()
-        mock_client.get = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_ctx, _ = make_async_client_with_responses(fake_resp)
 
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             result = await gateway.get_invoice("SETT-1", TOKEN)
 
         assert result.status == "200"
@@ -323,13 +412,9 @@ class TestGetInvoice:
         gateway = make_gateway()
         fake_resp = mock_response(404, {"message": "Not found"})
 
-        mock_client = AsyncMock()
-        mock_client.get = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_ctx, _ = make_async_client_with_responses(fake_resp)
 
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             with pytest.raises(Exception, match="Not found"):
                 await gateway.get_invoice("NONEXISTENT", TOKEN)
 
@@ -340,17 +425,13 @@ class TestGetInvoice:
 
 class TestDeleteInvoice:
     @pytest.mark.asyncio
-    async def test_returns_delete_response(self):
+    async def test_returns_delete_result(self):
         gateway = make_gateway()
         fake_resp = mock_response(200, {"status": "200", "message": "Factura eliminada"})
 
-        mock_client = AsyncMock()
-        mock_client.delete = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_ctx, _ = make_async_client_with_responses(fake_resp)
 
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             result = await gateway.delete_invoice("REF-001", TOKEN)
 
         assert result.status == "200"
@@ -361,13 +442,9 @@ class TestDeleteInvoice:
         gateway = make_gateway()
         fake_resp = mock_response(400, {"message": "No se puede eliminar"})
 
-        mock_client = AsyncMock()
-        mock_client.delete = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_ctx, _ = make_async_client_with_responses(fake_resp)
 
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             with pytest.raises(Exception, match="No se puede eliminar"):
                 await gateway.delete_invoice("REF-001", TOKEN)
 
@@ -382,31 +459,24 @@ class TestSendEmail:
         gateway = make_gateway()
         fake_resp = mock_response(200, {"status": "200", "message": "Email enviado"})
 
-        mock_client = AsyncMock()
-        mock_client.post = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_ctx, _ = make_async_client_with_responses(fake_resp)
 
         email_req = SendEmailRequest(email="client@example.com")
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             result = await gateway.send_email("SETT-1", email_req, TOKEN)
 
-        assert result.message == "Email enviado"
+        # send_email returns None on success
+        assert result is None
 
     @pytest.mark.asyncio
     async def test_includes_pdf_when_provided(self):
         gateway = make_gateway()
         fake_resp = mock_response(200, {"status": "200", "message": "ok"})
 
-        mock_client = AsyncMock()
-        mock_client.post = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_ctx, mock_client = make_async_client_with_responses(fake_resp)
 
         email_req = SendEmailRequest(email="x@example.com", pdf_base_64_encoded="pdfdata==")
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             await gateway.send_email("SETT-1", email_req, TOKEN)
 
         sent_json = mock_client.post.call_args.kwargs["json"]
@@ -417,14 +487,10 @@ class TestSendEmail:
         gateway = make_gateway()
         fake_resp = mock_response(200, {"status": "200", "message": "ok"})
 
-        mock_client = AsyncMock()
-        mock_client.post = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_ctx, mock_client = make_async_client_with_responses(fake_resp)
 
         email_req = SendEmailRequest(email="x@example.com")
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             await gateway.send_email("SETT-1", email_req, TOKEN)
 
         sent_json = mock_client.post.call_args.kwargs["json"]
@@ -437,7 +503,7 @@ class TestSendEmail:
 
 class TestGetInvoiceEvents:
     @pytest.mark.asyncio
-    async def test_returns_events_response(self):
+    async def test_returns_events_result(self):
         gateway = make_gateway()
         api_resp = {
             "status": "200",
@@ -455,16 +521,12 @@ class TestGetInvoiceEvents:
         }
         fake_resp = mock_response(200, api_resp)
 
-        mock_client = AsyncMock()
-        mock_client.get = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_ctx, _ = make_async_client_with_responses(fake_resp)
 
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             result = await gateway.get_invoice_events("SETT-1", TOKEN)
 
-        assert isinstance(result, InvoiceEventsResponse)
+        assert isinstance(result, InvoiceEventsResult)
         assert len(result.data) == 1
         assert result.data[0].event_code == "030"
 
@@ -473,12 +535,8 @@ class TestGetInvoiceEvents:
         gateway = make_gateway()
         fake_resp = mock_response(404, {"message": "Factura no encontrada"})
 
-        mock_client = AsyncMock()
-        mock_client.get = AsyncMock(return_value=fake_resp)
-        mock_async_ctx = MagicMock()
-        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
-        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_ctx, _ = make_async_client_with_responses(fake_resp)
 
-        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+        with patch("httpx.AsyncClient", return_value=mock_ctx):
             with pytest.raises(Exception, match="Factura no encontrada"):
                 await gateway.get_invoice_events("NONEXISTENT", TOKEN)

@@ -2,15 +2,22 @@ from pydantic import BaseModel, Field, model_validator
 from typing import List, Optional
 from decimal import Decimal
 
+from app.domain.models.enums import TributeType, IdentificationDocumentType
+
+
 class WithholdingTax(BaseModel):
     code: str
     withholding_tax_rate: Decimal
 
+
 class Mandate(BaseModel):
-    identification_document_id: int
+    document_type: IdentificationDocumentType
     identification: str
 
+
 class Item(BaseModel):
+    """Línea de producto/servicio en un documento de facturación."""
+
     code_reference: str
     name: str
 
@@ -20,15 +27,15 @@ class Item(BaseModel):
     discount_rate: Decimal = Field(default=Decimal("0.00"), ge=0)
 
     tax_rate: Decimal = Field(ge=0)
-    unit_measure_id: int
-    standard_code_id: int
 
-    # Factus espera 0 o 1
-    is_excluded: int = Field(ge=0, le=1)
+    # Códigos canónicos — el adaptador los traduce al ID entero del proveedor
+    unit_measure_code: str     # Ej: "94" = unidad, "KGM" = kilogramo
+    standard_code: str         # Ej: "1" = estándar de adopción del contribuyente
 
-    tribute_id: int
+    is_excluded: bool = False  # True si el ítem está excluido de IVA
+    tribute: TributeType
 
-    # Campos avanzados (Opcionales)
+    # Campos avanzados opcionales
     scheme_id: Optional[str] = None
     note: Optional[str] = None
     withholding_taxes: Optional[List[WithholdingTax]] = None
