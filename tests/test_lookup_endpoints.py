@@ -57,7 +57,7 @@ class TestGetReferenceTables:
 
 class TestGetMunicipalitiesEndpoint:
     def test_success(self):
-        from app.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.routers.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_municipalities = AsyncMock(return_value=[
@@ -75,7 +75,7 @@ class TestGetMunicipalitiesEndpoint:
         assert response.json()[0]["name"] == "Bogotá"
 
     def test_propagates_factus_error(self):
-        from app.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.routers.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_municipalities = AsyncMock(
@@ -98,7 +98,7 @@ class TestGetMunicipalitiesEndpoint:
 
 class TestGetTaxesEndpoint:
     def test_success(self):
-        from app.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.routers.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_tax_types = AsyncMock(return_value=[
@@ -122,7 +122,7 @@ class TestGetTaxesEndpoint:
 
 class TestGetCountriesEndpoint:
     def test_success(self):
-        from app.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.routers.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_countries = AsyncMock(return_value=[
@@ -140,7 +140,7 @@ class TestGetCountriesEndpoint:
         assert response.json()[0]["code"] == "CO"
 
     def test_passes_name_filter(self):
-        from app.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.routers.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_countries = AsyncMock(return_value=[])
@@ -155,7 +155,7 @@ class TestGetCountriesEndpoint:
         mock_gw.get_countries.assert_awaited_once_with("fake-factus-token", name="Colombia")
 
     def test_propagates_factus_error(self):
-        from app.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.routers.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_countries = AsyncMock(
@@ -178,7 +178,7 @@ class TestGetCountriesEndpoint:
 
 class TestGetAcquirerEndpoint:
     def test_success(self):
-        from app.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.routers.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_acquirer = AsyncMock(return_value=Acquirer(
@@ -208,7 +208,7 @@ class TestGetAcquirerEndpoint:
         assert response.status_code == 422
 
     def test_propagates_factus_404(self):
-        from app.api.v1.endpoints.lookups import get_lookup_gateway
+        from app.api.v1.routers.lookups import get_lookup_gateway
 
         mock_gw = AsyncMock(spec=FactusLookupGateway)
         mock_gw.get_acquirer = AsyncMock(

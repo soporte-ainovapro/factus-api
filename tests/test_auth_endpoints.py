@@ -31,7 +31,7 @@ def get_auth_client() -> TestClient:
 
 class TestFactusLogin:
     def test_factus_login_success(self):
-        from app.api.v1.endpoints.auth import get_auth_gateway
+        from app.api.v1.routers.auth import get_auth_gateway
 
         mock_gw = AsyncMock(spec=FactusAuthGateway)
         mock_gw.authenticate = AsyncMock(return_value=FACTUS_TOKEN)
@@ -106,7 +106,7 @@ class TestFactusRefresh:
         assert response.status_code == 422
 
     def test_refresh_success(self):
-        from app.api.v1.endpoints.auth import get_auth_gateway
+        from app.api.v1.routers.auth import get_auth_gateway
 
         mock_gw = AsyncMock(spec=FactusAuthGateway)
         mock_gw.refresh_token = AsyncMock(return_value=FACTUS_TOKEN)
