@@ -14,6 +14,7 @@ logging.basicConfig(level=logging.INFO)
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     errors = exc.errors()
+    logging.info(f"Validation error for {request.method} {request.url}: {errors}")
     # Check if the error is likely due to passing a stringified JSON body
     for error in errors:
         err_type = error.get("type", "")
@@ -60,6 +61,23 @@ def create_app() -> FastAPI:
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        import time
+        start_time = time.time()
+        body = await request.body()
+        logging.info(f"Incoming request: {request.method} {request.url} body={body.decode()[:500]}")
+        
+        # We need to replace the request body because it's been consumed
+        async def receive():
+            return {"type": "http.request", "body": body}
+        request._receive = receive
+        
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        logging.info(f"Completed request: {request.method} {request.url} status={response.status_code} time={process_time:.4f}s")
+        return response
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
@@ -69,7 +87,11 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(api_v1_router, prefix=settings.API_V1_STR)
-
+    
+    @app.get("/health")
+    async def health():
+        return {"status": "ok"}
+    
     @app.get("/")
     async def root():
         from fastapi.responses import RedirectResponse

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Header, Query
 from typing import Optional, List
-from app.domain.exceptions import FactusAPIError
-from app.domain.models.numbering_range import (
+from app.core.exceptions import FactusAPIError
+from app.schemas.numbering_range import (
     NumberingRange,
     NumberingRangeSoftware,
     NumberingRangeResponse,
@@ -11,15 +11,15 @@ from app.domain.models.numbering_range import (
     NumberingRangeDeleteResponse,
     NumberingRangeSoftwareResponse,
 )
-from app.infrastructure.gateways.factus_numbering_range_gateway import FactusNumberingRangeGateway
+from app.services.factus_numbering_range_service import FactusNumberingRangeService
 from app.core.config import settings
 
 from app.api.deps import verify_api_key
 
 router = APIRouter()
 
-def get_numbering_range_gateway() -> FactusNumberingRangeGateway:
-    return FactusNumberingRangeGateway(base_url=settings.FACTUS_BASE_URL)
+def get_numbering_range_service() -> FactusNumberingRangeService:
+    return FactusNumberingRangeService(base_url=settings.FACTUS_BASE_URL)
 
 @router.get("/", response_model=List[NumberingRange])
 async def get_numbering_ranges(
@@ -29,7 +29,7 @@ async def get_numbering_ranges(
     resolution_number: Optional[str] = Query(None, description="Filtrar por número de resolución"),
     technical_key: Optional[str] = Query(None, description="Filtrar por clave técnica"),
     is_active: Optional[int] = Query(None, description="Filtrar por estado activo (1 o 0)"),
-    gateway: FactusNumberingRangeGateway = Depends(get_numbering_range_gateway),
+    service: FactusNumberingRangeService = Depends(get_numbering_range_service),
     _: str = Depends(verify_api_key)
 ):
     try:
@@ -40,7 +40,7 @@ async def get_numbering_ranges(
             "technical_key": technical_key,
             "is_active": is_active
         }
-        resp = await gateway.get_numbering_ranges(x_factus_token, filters=filters)
+        resp = await service.get_numbering_ranges(x_factus_token, filters=filters)
         return resp.data if resp.data else []
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
@@ -50,11 +50,11 @@ async def get_numbering_ranges(
 @router.get("/software", response_model=List[NumberingRangeSoftware])
 async def get_software_numbering_ranges(
     x_factus_token: str = Header(...),
-    gateway: FactusNumberingRangeGateway = Depends(get_numbering_range_gateway),
+    service: FactusNumberingRangeService = Depends(get_numbering_range_service),
     _: str = Depends(verify_api_key)
 ):
     try:
-        resp = await gateway.get_software_numbering_ranges(x_factus_token)
+        resp = await service.get_software_numbering_ranges(x_factus_token)
         return resp.data if resp.data else []
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
@@ -65,11 +65,11 @@ async def get_software_numbering_ranges(
 async def get_numbering_range(
     id: int,
     x_factus_token: str = Header(...),
-    gateway: FactusNumberingRangeGateway = Depends(get_numbering_range_gateway),
+    service: FactusNumberingRangeService = Depends(get_numbering_range_service),
     _: str = Depends(verify_api_key)
 ):
     try:
-        resp = await gateway.get_numbering_range(id, x_factus_token)
+        resp = await service.get_numbering_range(id, x_factus_token)
         return resp.data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
@@ -80,11 +80,11 @@ async def get_numbering_range(
 async def create_numbering_range(
     range_data: NumberingRangeCreate,
     x_factus_token: str = Header(...),
-    gateway: FactusNumberingRangeGateway = Depends(get_numbering_range_gateway),
+    service: FactusNumberingRangeService = Depends(get_numbering_range_service),
     _: str = Depends(verify_api_key)
 ):
     try:
-        resp = await gateway.create_numbering_range(range_data, x_factus_token)
+        resp = await service.create_numbering_range(range_data, x_factus_token)
         return resp.data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
@@ -96,11 +96,11 @@ async def update_numbering_range_consecutive(
     id: int,
     update_data: NumberingRangeUpdate,
     x_factus_token: str = Header(...),
-    gateway: FactusNumberingRangeGateway = Depends(get_numbering_range_gateway),
+    service: FactusNumberingRangeService = Depends(get_numbering_range_service),
     _: str = Depends(verify_api_key)
 ):
     try:
-        resp = await gateway.update_numbering_range_consecutive(id, update_data, x_factus_token)
+        resp = await service.update_numbering_range_consecutive(id, update_data, x_factus_token)
         return resp.data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
@@ -111,11 +111,11 @@ async def update_numbering_range_consecutive(
 async def delete_numbering_range(
     id: int,
     x_factus_token: str = Header(...),
-    gateway: FactusNumberingRangeGateway = Depends(get_numbering_range_gateway),
+    service: FactusNumberingRangeService = Depends(get_numbering_range_service),
     _: str = Depends(verify_api_key)
 ):
     try:
-        resp = await gateway.delete_numbering_range(id, x_factus_token)
+        resp = await service.delete_numbering_range(id, x_factus_token)
         return {"status": resp.status}
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))

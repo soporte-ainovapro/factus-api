@@ -1,21 +1,21 @@
 """
-Unit tests for FactusLookupGateway.
+Unit tests for FactusLookupService.
 
 All HTTP calls are mocked — no real network requests.
 """
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.infrastructure.gateways.factus_lookup_gateway import FactusLookupGateway
-from app.domain.models.lookup import Municipality, Tax, Unit, NumberingRange, Country, Acquirer
-from app.domain.exceptions import FactusAPIError
+from app.services.factus_lookup_service import FactusLookupService
+from app.schemas.lookup import Municipality, Tax, Unit, NumberingRange, Country, Acquirer
+from app.core.exceptions import FactusAPIError
 
 BASE_URL = "https://api-sandbox.factus.com.co"
 TOKEN = "fake-factus-token"
 
 
-def make_gateway() -> FactusLookupGateway:
-    return FactusLookupGateway(base_url=BASE_URL)
+def make_gateway() -> FactusLookupService:
+    return FactusLookupService(base_url=BASE_URL)
 
 
 def mock_response(status_code: int, json_body: dict) -> MagicMock:

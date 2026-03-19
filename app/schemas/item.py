@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, model_validator
 from typing import List, Optional
 from decimal import Decimal
 
-from app.domain.models.enums import TributeType, IdentificationDocumentType
+from app.schemas.enums import TributeType, IdentificationDocumentType
 
 
 class WithholdingTax(BaseModel):

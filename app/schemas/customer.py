@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, model_validator
 from typing import Optional
 
-from app.domain.models.enums import IdentificationDocumentType, LegalOrganizationType, TributeType
+from app.schemas.enums import IdentificationDocumentType, LegalOrganizationType, TributeType
 
 
 class Customer(BaseModel):

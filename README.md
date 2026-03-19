@@ -96,24 +96,21 @@ app/
 ├── api/
 │   ├── deps.py                  # Shared dependencies (auth)
 │   └── v1/
-│       └── endpoints/
+│       └── routers/
 │           ├── auth.py          # Local + Factus auth (rate-limited)
 │           ├── invoices.py      # Invoice CRUD
 │           └── lookups.py       # Reference data
 ├── core/
 │   ├── config.py                # Settings (pydantic-settings)
+│   ├── exceptions.py            # FactusAPIError (structured API errors)
 │   ├── limiter.py               # slowapi Limiter instance
 │   ├── responses.py             # ApiResponse[T] wrapper
 │   └── security.py              # JWT + password hashing
-├── domain/
-│   ├── exceptions.py            # FactusAPIError (structured gateway errors)
-│   ├── models/                  # Pydantic domain models
-│   └── interfaces/              # Abstract gateway contracts
-└── infrastructure/
-    └── gateways/                # Factus HTTP implementations
+├── schemas/                     # Pydantic request/response models
+└── services/                    # Factus HTTP implementations
 ```
 
-The architecture follows a ports-and-adapters pattern. Endpoints depend only on abstract interfaces; concrete Factus HTTP gateways are injected via FastAPI's `Depends()`.
+The architecture follows a Service Layer pattern. Endpoints depend on Service classes that handle HTTP interactions with Factus and return Pydantic schemas. Services are injected via FastAPI's `Depends()`.
 
 ## API Reference
 

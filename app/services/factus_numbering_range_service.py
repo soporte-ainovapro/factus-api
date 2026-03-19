@@ -1,8 +1,8 @@
 import httpx
 import logging
 from typing import Dict, Any, Optional
-from app.domain.interfaces.numbering_range_gateway import INumberingRangeGateway
-from app.domain.models.numbering_range import (
+
+from app.schemas.numbering_range import (
     NumberingRangeResponse,
     NumberingRangeListResponse,
     NumberingRangeCreate,
@@ -10,11 +10,11 @@ from app.domain.models.numbering_range import (
     NumberingRangeDeleteResponse,
     NumberingRangeSoftwareResponse,
 )
-from app.domain.exceptions import FactusAPIError
+from app.core.exceptions import FactusAPIError
 
 logger = logging.getLogger(__name__)
 
-class FactusNumberingRangeGateway(INumberingRangeGateway):
+class FactusNumberingRangeService:
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip("/")
 

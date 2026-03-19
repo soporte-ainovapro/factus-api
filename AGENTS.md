@@ -4,7 +4,7 @@ This document provides guidelines for agents working on the Factus API project.
 
 ## Project Overview
 
-FastAPI-based REST API for interacting with the Factus (Colombian e-invoicing) API. Uses clean architecture with domain-driven design patterns.
+FastAPI-based REST API for interacting with the Factus (Colombian e-invoicing) API. Uses a Service Layer architecture.
 
 ## Build, Lint, and Test Commands
 
@@ -62,20 +62,15 @@ app/
 ├── main.py                 # FastAPI app factory
 ├── api/
 │   ├── v1/
-│   │   ├── endpoints/      # Route handlers
-│   │   └── schemas/        # Pydantic request/response models
+│   │   └── routers/        # Route handlers
 │   └── deps.py             # Dependency injection
 ├── core/
 │   ├── config.py           # Settings (pydantic-settings)
+│   ├── exceptions.py       # Custom exceptions
 │   ├── security.py         # Password hashing, JWT
 │   └── responses.py        # Custom response models
-├── domain/
-│   ├── models/             # Domain entities
-│   └── interfaces/         # Abstract interfaces (ports)
-└── infrastructure/
-    ├── gateways/           # External API implementations
-    ├── repositories/       # Database implementations
-    └── db/                 # Database setup
+├── schemas/                # Pydantic request/response models
+└── services/               # External API calls and business logic
 ```
 
 ### Import Conventions
@@ -96,7 +91,7 @@ from pydantic import BaseModel, EmailStr
 
 from app.api.deps import get_current_user
 from app.core.config import settings
-from app.domain.models.user import User
+from app.schemas.user import User
 ```
 
 ### Type Annotations
@@ -121,9 +116,9 @@ def process_data(items):
 ### Naming Conventions
 
 - **Variables/Functions**: `snake_case` (e.g., `get_user_by_id`, `user_data`)
-- **Classes**: `PascalCase` (e.g., `FactusAuthGateway`, `UserInDB`)
+- **Classes**: `PascalCase` (e.g., `FactusAuthService`, `UserInDB`)
 - **Constants**: `UPPER_SNAKE_CASE` (e.g., `MAX_RETRIES`, `DEFAULT_TIMEOUT`)
-- **Files**: `snake_case.py` (e.g., `auth_gateway.py`, `user_model.py`)
+- **Files**: `snake_case.py` (e.g., `auth_service.py`, `user.py`)
 - **Routes**: Use descriptive plural nouns (e.g., `/invoices`, `/lookups`)
 
 ### Pydantic Models
@@ -169,7 +164,7 @@ except Exception:
 
 ### Async/Await
 
-- Use `async def` for route handlers and gateway methods
+- Use `async def` for route handlers and service methods
 - Always `await` async functions
 - Use `httpx.AsyncClient` for HTTP requests (never `requests`)
 
@@ -195,15 +190,15 @@ def get_item(item_id: str) -> Item:
 - Use `app/api/deps.py` for shared dependencies
 
 ```python
-def get_auth_gateway() -> FactusAuthGateway:
-    return FactusAuthGateway(
+def get_auth_service() -> FactusAuthService:
+    return FactusAuthService(
         base_url=settings.FACTUS_BASE_URL,
         client_id=settings.FACTUS_CLIENT_ID,
         client_secret=settings.FACTUS_CLIENT_SECRET
     )
 
 @router.post("/login")
-async def login(gateway: FactusAuthGateway = Depends(get_auth_gateway)):
+async def login(service: FactusAuthService = Depends(get_auth_service)):
     ...
 ```
 

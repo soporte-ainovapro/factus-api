@@ -1,5 +1,5 @@
 """
-Unit tests for FactusInvoiceGateway.
+Unit tests for FactusInvoiceService.
 
 All HTTP calls are mocked — no real network requests.
 
@@ -11,13 +11,13 @@ import pytest
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.infrastructure.gateways.factus_invoice_gateway import FactusInvoiceGateway
-from app.domain.interfaces.invoice_gateway import SendEmailRequest
-from app.domain.models.invoice import Invoice
-from app.domain.models.customer import Customer
-from app.domain.models.item import Item as InvoiceItem
-from app.domain.models.results import InvoiceEventsResult
-from app.domain.models.enums import (
+from app.services.factus_invoice_service import FactusInvoiceService
+from app.schemas.invoice import SendEmailRequest
+from app.schemas.invoice import Invoice
+from app.schemas.customer import Customer
+from app.schemas.item import Item as InvoiceItem
+from app.schemas.results import InvoiceEventsResult
+from app.schemas.enums import (
     DocumentType, PaymentForm,
     IdentificationDocumentType, LegalOrganizationType, TributeType,
 )
@@ -36,8 +36,8 @@ MOCK_RANGES_RESPONSE = {
 }
 
 
-def make_gateway() -> FactusInvoiceGateway:
-    return FactusInvoiceGateway(base_url=BASE_URL)
+def make_gateway() -> FactusInvoiceService:
+    return FactusInvoiceService(base_url=BASE_URL)
 
 
 def mock_response(status_code: int, json_body: dict) -> MagicMock:

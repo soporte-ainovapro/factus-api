@@ -9,8 +9,8 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.api.deps import verify_api_key
-from app.domain.models.auth_token import AuthToken
-from app.infrastructure.gateways.factus_auth_gateway import FactusAuthGateway
+from app.schemas.auth_token import AuthToken
+from app.services.factus_auth_service import FactusAuthService
 
 TEST_API_KEY = "test-api-key-for-pytest"
 VALID_API_KEY_HEADER = {"X-API-Key": TEST_API_KEY}
@@ -31,13 +31,13 @@ def get_auth_client() -> TestClient:
 
 class TestFactusLogin:
     def test_factus_login_success(self):
-        from app.api.v1.routers.auth import get_auth_gateway
+        from app.api.v1.routers.auth import get_auth_service
 
-        mock_gw = AsyncMock(spec=FactusAuthGateway)
+        mock_gw = AsyncMock(spec=FactusAuthService)
         mock_gw.authenticate = AsyncMock(return_value=FACTUS_TOKEN)
 
         app.dependency_overrides[verify_api_key] = lambda: TEST_API_KEY
-        app.dependency_overrides[get_auth_gateway] = lambda: mock_gw
+        app.dependency_overrides[get_auth_service] = lambda: mock_gw
 
         client = TestClient(app)
         response = client.post(
@@ -106,13 +106,13 @@ class TestFactusRefresh:
         assert response.status_code == 422
 
     def test_refresh_success(self):
-        from app.api.v1.routers.auth import get_auth_gateway
+        from app.api.v1.routers.auth import get_auth_service
 
-        mock_gw = AsyncMock(spec=FactusAuthGateway)
+        mock_gw = AsyncMock(spec=FactusAuthService)
         mock_gw.refresh_token = AsyncMock(return_value=FACTUS_TOKEN)
 
         app.dependency_overrides[verify_api_key] = lambda: TEST_API_KEY
-        app.dependency_overrides[get_auth_gateway] = lambda: mock_gw
+        app.dependency_overrides[get_auth_service] = lambda: mock_gw
 
         client = TestClient(app)
         response = client.post(

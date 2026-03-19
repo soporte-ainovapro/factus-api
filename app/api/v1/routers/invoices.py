@@ -2,14 +2,15 @@ from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, HTTPException, Depends, Header
 from pydantic import BaseModel, EmailStr
 
-from app.domain.exceptions import FactusAPIError
-from app.domain.models.invoice import Invoice
-from app.domain.models.results import (
+from app.core.exceptions import FactusAPIError
+from app.schemas.invoice import Invoice
+from app.schemas.results import (
     InvoiceResult, DownloadResult, InvoiceDataResult,
     DeleteInvoiceResult, InvoiceEventsResult, InvoiceEvent,
 )
-from app.domain.interfaces.invoice_gateway import IInvoiceGateway, SendEmailRequest
-from app.api.deps import verify_api_key, get_invoice_gateway
+from app.schemas.invoice import SendEmailRequest
+from app.services.factus_invoice_service import FactusInvoiceService
+from app.api.deps import verify_api_key, get_invoice_service
 
 router = APIRouter()
 
@@ -27,11 +28,11 @@ class SendEmailRequestSchema(BaseModel):
 async def create_invoice(
     invoice: Invoice,
     x_factus_token: str = Header(...),
-    gateway: IInvoiceGateway = Depends(get_invoice_gateway),
+    service: FactusInvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:
-        return await gateway.create_invoice(invoice, x_factus_token)
+        return await service.create_invoice(invoice, x_factus_token)
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
@@ -42,11 +43,11 @@ async def create_invoice(
 async def get_pdf(
     number: str,
     x_factus_token: str = Header(...),
-    gateway: IInvoiceGateway = Depends(get_invoice_gateway),
+    service: FactusInvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:
-        return await gateway.download_pdf(number, x_factus_token)
+        return await service.download_pdf(number, x_factus_token)
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
@@ -57,11 +58,11 @@ async def get_pdf(
 async def get_xml(
     number: str,
     x_factus_token: str = Header(...),
-    gateway: IInvoiceGateway = Depends(get_invoice_gateway),
+    service: FactusInvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:
-        return await gateway.download_xml(number, x_factus_token)
+        return await service.download_xml(number, x_factus_token)
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
@@ -72,11 +73,11 @@ async def get_xml(
 async def get_invoice_events(
     number: str,
     x_factus_token: str = Header(...),
-    gateway: IInvoiceGateway = Depends(get_invoice_gateway),
+    service: FactusInvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:
-        resp = await gateway.get_invoice_events(number, x_factus_token)
+        resp = await service.get_invoice_events(number, x_factus_token)
         return resp.data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
@@ -88,11 +89,11 @@ async def get_invoice_events(
 async def get_invoice(
     number: str,
     x_factus_token: str = Header(...),
-    gateway: IInvoiceGateway = Depends(get_invoice_gateway),
+    service: FactusInvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:
-        resp = await gateway.get_invoice(number, x_factus_token)
+        resp = await service.get_invoice(number, x_factus_token)
         return resp.data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
@@ -104,11 +105,11 @@ async def get_invoice(
 async def delete_invoice(
     reference_code: str,
     x_factus_token: str = Header(...),
-    gateway: IInvoiceGateway = Depends(get_invoice_gateway),
+    service: FactusInvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:
-        return await gateway.delete_invoice(reference_code, x_factus_token)
+        return await service.delete_invoice(reference_code, x_factus_token)
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
     except Exception as e:
@@ -120,7 +121,7 @@ async def send_email(
     number: str,
     body: SendEmailRequestSchema,
     x_factus_token: str = Header(...),
-    gateway: IInvoiceGateway = Depends(get_invoice_gateway),
+    service: FactusInvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:
@@ -128,7 +129,7 @@ async def send_email(
             email=str(body.email),
             pdf_base_64_encoded=body.pdf_base_64_encoded,
         )
-        await gateway.send_email(number, request, x_factus_token)
+        await service.send_email(number, request, x_factus_token)
         return {"status": "ok", "message": "Correo enviado correctamente"}
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))

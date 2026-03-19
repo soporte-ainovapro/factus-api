@@ -1,12 +1,12 @@
 import httpx
 from typing import List, Optional
-from app.domain.interfaces.lookup_gateway import ILookupGateway
-from app.domain.models.lookup import (
+
+from app.schemas.lookup import (
     Municipality, Unit, Tax, NumberingRange, Country, Acquirer
 )
-from app.domain.exceptions import FactusAPIError
+from app.core.exceptions import FactusAPIError
 
-class FactusLookupGateway(ILookupGateway):
+class FactusLookupService:
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip("/")
 

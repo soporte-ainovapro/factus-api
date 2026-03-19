@@ -1,10 +1,10 @@
 import httpx
-from app.domain.interfaces.auth_gateway import IAuthGateway
-from app.domain.models.auth_token import AuthToken
-from app.domain.exceptions import FactusAPIError
-from app.core.config import settings
 
-class FactusAuthGateway(IAuthGateway):
+from app.schemas.auth_token import AuthToken
+from app.core.exceptions import FactusAPIError
+
+
+class FactusAuthService:
     def __init__(self, base_url: str, client_id: str, client_secret: str):
         self.base_url = base_url.rstrip("/")
         self.client_id = client_id
@@ -38,13 +38,13 @@ class FactusAuthGateway(IAuthGateway):
                     "username": email,
                     "password": password,
                 },
-                headers={"Accept": "application/json"}
+                headers={"Accept": "application/json"},
             )
 
         if not response.is_success:
             raise FactusAPIError(
                 self._parse_error(response, "Error de autenticación con Factus"),
-                status_code=self._status_code(response)
+                status_code=self._status_code(response),
             )
 
         data = response.json()
@@ -52,7 +52,7 @@ class FactusAuthGateway(IAuthGateway):
             access_token=data["access_token"],
             token_type=data["token_type"],
             expires_in=data["expires_in"],
-            refresh_token=data.get("refresh_token")
+            refresh_token=data.get("refresh_token"),
         )
 
     async def refresh_token(self, refresh_token: str) -> AuthToken:
@@ -65,13 +65,13 @@ class FactusAuthGateway(IAuthGateway):
                     "client_secret": self.client_secret,
                     "refresh_token": refresh_token,
                 },
-                headers={"Accept": "application/json"}
+                headers={"Accept": "application/json"},
             )
 
         if not response.is_success:
             raise FactusAPIError(
                 self._parse_error(response, "Error al refrescar el token de Factus"),
-                status_code=self._status_code(response)
+                status_code=self._status_code(response),
             )
 
         data = response.json()
@@ -79,5 +79,5 @@ class FactusAuthGateway(IAuthGateway):
             access_token=data["access_token"],
             token_type=data["token_type"],
             expires_in=data["expires_in"],
-            refresh_token=data.get("refresh_token")
+            refresh_token=data.get("refresh_token"),
         )

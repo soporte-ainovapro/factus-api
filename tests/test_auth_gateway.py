@@ -1,13 +1,13 @@
 """
-Unit tests for FactusAuthGateway.
+Unit tests for FactusAuthService.
 
 All HTTP calls are mocked via unittest.mock — no real network requests.
 """
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 
-from app.infrastructure.gateways.factus_auth_gateway import FactusAuthGateway
-from app.domain.models.auth_token import AuthToken
+from app.services.factus_auth_service import FactusAuthService
+from app.schemas.auth_token import AuthToken
 
 BASE_URL = "https://api-sandbox.factus.com.co"
 CLIENT_ID = "test-client-id"
@@ -21,8 +21,8 @@ AUTH_TOKEN_RESPONSE = {
 }
 
 
-def make_gateway() -> FactusAuthGateway:
-    return FactusAuthGateway(
+def make_gateway() -> FactusAuthService:
+    return FactusAuthService(
         base_url=BASE_URL,
         client_id=CLIENT_ID,
         client_secret=CLIENT_SECRET,

@@ -1,12 +1,17 @@
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from typing import List, Optional
 from datetime import date
 
-from app.domain.models.customer import Customer
-from app.domain.models.establishment import Establishment
-from app.domain.models.item import Item
-from app.domain.models.shared import OrderReference, RelatedDocument, BillingPeriod, AllowanceCharge
-from app.domain.models.enums import DocumentType, PaymentForm
+from app.schemas.customer import Customer
+from app.schemas.establishment import Establishment
+from app.schemas.item import Item
+from app.schemas.shared import (
+    OrderReference,
+    RelatedDocument,
+    BillingPeriod,
+    AllowanceCharge,
+)
+from app.schemas.enums import DocumentType, PaymentForm
 
 
 class Invoice(BaseModel):
@@ -27,7 +32,7 @@ class Invoice(BaseModel):
     # Pago
     payment_method_code: str = Field(
         default="10",
-        description="Código del método de pago (depende del proveedor). Ej: '10'=Efectivo, '48'=Tarjeta"
+        description="Código del método de pago (depende del proveedor). Ej: '10'=Efectivo, '48'=Tarjeta",
     )
     payment_form: PaymentForm = PaymentForm.CASH
     payment_due_date: Optional[date] = None
@@ -49,5 +54,12 @@ class Invoice(BaseModel):
         if not self.items:
             raise ValueError("Invoice must contain at least one item")
         if self.payment_form == PaymentForm.CREDIT and not self.payment_due_date:
-            raise ValueError("payment_due_date es obligatorio cuando payment_form es 'credit'")
+            raise ValueError(
+                "payment_due_date es obligatorio cuando payment_form es 'credit'"
+            )
         return self
+
+
+class SendEmailRequest(BaseModel):
+    email: EmailStr
+    pdf_base_64_encoded: Optional[str] = None

@@ -1,12 +1,12 @@
 import httpx
 import logging
-from app.domain.interfaces.company_gateway import ICompanyGateway
-from app.domain.models.company import CompanyResponse, CompanyUpdate, CompanyLogoUpdateResponse
-from app.domain.exceptions import FactusAPIError
+
+from app.schemas.company import CompanyResponse, CompanyUpdate, CompanyLogoUpdateResponse
+from app.core.exceptions import FactusAPIError
 
 logger = logging.getLogger(__name__)
 
-class FactusCompanyGateway(ICompanyGateway):
+class FactusCompanyService:
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip("/")
 

@@ -8,18 +8,18 @@ The /login (local mock) endpoint has been removed. All callers
 must authenticate using the shared X-API-Key header instead.
 """
 from fastapi import APIRouter, HTTPException, Depends
-from app.api.v1.schemas.auth import LoginRequest, RefreshTokenRequest
-from app.domain.exceptions import FactusAPIError
-from app.domain.models.auth_token import AuthToken
-from app.infrastructure.gateways.factus_auth_gateway import FactusAuthGateway
+from app.schemas.auth import LoginRequest, RefreshTokenRequest
+from app.core.exceptions import FactusAPIError
+from app.schemas.auth_token import AuthToken
+from app.services.factus_auth_service import FactusAuthService
 from app.core.config import settings
 from app.api.deps import verify_api_key
 
 router = APIRouter()
 
 
-def get_auth_gateway() -> FactusAuthGateway:
-    return FactusAuthGateway(
+def get_auth_service() -> FactusAuthService:
+    return FactusAuthService(
         base_url=settings.FACTUS_BASE_URL,
         client_id=settings.FACTUS_CLIENT_ID,
         client_secret=settings.FACTUS_CLIENT_SECRET,
@@ -29,7 +29,7 @@ def get_auth_gateway() -> FactusAuthGateway:
 @router.post("/factus/login", response_model=AuthToken)
 async def login_factus(
     request: LoginRequest,
-    gateway: FactusAuthGateway = Depends(get_auth_gateway),
+    service: FactusAuthService = Depends(get_auth_service),
     _: str = Depends(verify_api_key),
 ):
     """
@@ -37,7 +37,7 @@ async def login_factus(
     Requiere la cabecera X-API-Key con la clave interna de la plataforma.
     """
     try:
-        data = await gateway.authenticate(request.email, request.password)
+        data = await service.authenticate(request.email, request.password)
         return data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
@@ -48,7 +48,7 @@ async def login_factus(
 @router.post("/factus/refresh", response_model=AuthToken)
 async def refresh_factus_token(
     request: RefreshTokenRequest,
-    gateway: FactusAuthGateway = Depends(get_auth_gateway),
+    service: FactusAuthService = Depends(get_auth_service),
     _: str = Depends(verify_api_key),
 ):
     """
@@ -56,7 +56,7 @@ async def refresh_factus_token(
     Requiere la cabecera X-API-Key con la clave interna de la plataforma.
     """
     try:
-        data = await gateway.refresh_token(request.refresh_token)
+        data = await service.refresh_token(request.refresh_token)
         return data
     except FactusAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=str(e))
