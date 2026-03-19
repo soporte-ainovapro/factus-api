@@ -15,7 +15,6 @@ REST API built with FastAPI that acts as a secure intermediary for the [Factus](
 - Reference data lookups (municipalities, taxes, units, numbering ranges, countries)
 - Static DIAN reference tables in a single endpoint (no Factus token required)
 - Acquirer lookup via DIAN — autocomplete customer data by document number
-- Acquirer lookup via DIAN — autocomplete customer data by document number
 
 ## Requirements
 
@@ -94,23 +93,32 @@ pytest --cov=app.src --cov-report=html
 app/
 ├── main.py                      # FastAPI app factory
 ├── api/
-│   ├── deps.py                  # Shared dependencies (auth)
+│   ├── deps.py                  # Dependency injection + service factories
 │   └── v1/
 │       └── routers/
 │           ├── auth.py          # Local + Factus auth (rate-limited)
+│           ├── company.py       # Company profile management
 │           ├── invoices.py      # Invoice CRUD
-│           └── lookups.py       # Reference data
+│           ├── lookups.py       # Reference data
+│           └── numbering_ranges.py  # Numbering ranges CRUD
 ├── core/
 │   ├── config.py                # Settings (pydantic-settings)
 │   ├── exceptions.py            # FactusAPIError (structured API errors)
-│   ├── limiter.py               # slowapi Limiter instance
-│   ├── responses.py             # ApiResponse[T] wrapper
-│   └── security.py              # JWT + password hashing
+│   └── limiter.py               # slowapi Limiter instance
 ├── schemas/                     # Pydantic request/response models
-└── services/                    # Factus HTTP implementations
+└── services/
+    ├── interfaces.py            # Generic service Protocols (provider-agnostic)
+    └── providers/
+        └── factus/              # Factus-specific implementations
+            ├── factus_auth_service.py
+            ├── factus_code_maps.py
+            ├── factus_company_service.py
+            ├── factus_invoice_service.py
+            ├── factus_lookup_service.py
+            └── factus_numbering_range_service.py
 ```
 
-The architecture follows a Service Layer pattern. Endpoints depend on Service classes that handle HTTP interactions with Factus and return Pydantic schemas. Services are injected via FastAPI's `Depends()`.
+The architecture follows a **Service Layer + Provider Adapter** pattern. Routers depend only on generic `Protocol` interfaces defined in `services/interfaces.py`. Concrete Factus implementations live in `services/providers/factus/`. The `api/deps.py` is the single factory that wires interfaces to implementations via FastAPI's `Depends()`.
 
 ## API Reference
 
@@ -163,16 +171,16 @@ All endpoints require two headers:
 
 ### Lookups
 
-All lookup endpoints require `Authorization: Bearer <local_jwt>`. Endpoints marked with * also require `X-Factus-Token`.
+All lookup endpoints require `X-API-Key`. Endpoints marked with * also require `X-Factus-Token`.
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `GET` | `/api/v1/lookups/reference-tables` | JWT only | All fixed DIAN reference tables (see below) |
-| `GET` | `/api/v1/lookups/municipalities` | JWT + Factus* | Colombian municipalities |
-| `GET` | `/api/v1/lookups/taxes` | JWT + Factus* | Product tax types |
-| `GET` | `/api/v1/lookups/units` | JWT + Factus* | Units of measure |
-| `GET` | `/api/v1/lookups/countries?name=` | JWT + Factus* | Countries (optional name filter) |
-| `GET` | `/api/v1/lookups/acquirer` | JWT + Factus* | Customer name + email from DIAN |
+| `GET` | `/api/v1/lookups/reference-tables` | API Key only | All fixed DIAN reference tables (see below) |
+| `GET` | `/api/v1/lookups/municipalities` | API Key + Factus* | Colombian municipalities |
+| `GET` | `/api/v1/lookups/taxes` | API Key + Factus* | Product tax types |
+| `GET` | `/api/v1/lookups/units` | API Key + Factus* | Units of measure |
+| `GET` | `/api/v1/lookups/countries?name=` | API Key + Factus* | Countries (optional name filter) |
+| `GET` | `/api/v1/lookups/acquirer` | API Key + Factus* | Customer name + email from DIAN |
 
 #### `/lookups/reference-tables`
 
@@ -192,7 +200,7 @@ Returns all fixed catalog tables defined by the DIAN in a single request. No Fac
 
 Queries the DIAN directly to retrieve the name and email of a customer by document type and number. Useful for auto-filling customer fields in an invoice form.
 
-Query params: `identification_document_id` (int) and `identification_number` (string).
+Query params: `identification_document_type` (string, e.g. `CC`, `NIT`, `TI`) and `identification_number` (string). `factus-api` maps the canonical code to the Factus integer ID internally.
 
 ### Response format
 
