@@ -5,10 +5,13 @@ from typing import Any, Dict, Optional
 from app.core.exceptions import FactusAPIError
 from app.schemas.invoice import Invoice, SendEmailRequest
 from app.schemas.results import (
-    InvoiceResult, DownloadResult, InvoiceDataResult,
-    DeleteInvoiceResult, InvoiceEventsResult
+    InvoiceResult,
+    DownloadResult,
+    InvoiceDataResult,
+    DeleteInvoiceResult,
+    InvoiceEventsResult,
 )
-from app.services.factus_code_maps import (
+from app.services.providers.factus.factus_code_maps import (
     DOCUMENT_TYPE_TO_FACTUS_ID,
     LEGAL_ORGANIZATION_TO_FACTUS_ID,
     ITEM_TRIBUTE_TO_FACTUS_ID,
@@ -17,7 +20,7 @@ from app.services.factus_code_maps import (
     DOCUMENT_TYPE_TO_FACTUS_BILL_CODE,
     UNIT_MEASURE_TO_FACTUS_ID,
     STANDARD_CODE_TO_FACTUS_ID,
-    PAYMENT_METHOD_TO_FACTUS_CODE
+    PAYMENT_METHOD_TO_FACTUS_CODE,
 )
 
 logger = logging.getLogger(__name__)
@@ -54,7 +57,11 @@ class FactusInvoiceService:
                     parts.append(str(msgs))
             return "; ".join(parts)
 
-        nested_errors = data.get("data", {}).get("errors") if isinstance(data.get("data"), dict) else None
+        nested_errors = (
+            data.get("data", {}).get("errors")
+            if isinstance(data.get("data"), dict)
+            else None
+        )
         if isinstance(nested_errors, dict) and nested_errors:
             field_errors = _fmt_dict_errors(nested_errors)
             return f"{top_message} — {field_errors}" if top_message else field_errors
@@ -65,7 +72,11 @@ class FactusInvoiceService:
             return f"{top_message} — {field_errors}" if top_message else field_errors
 
         if isinstance(errors, list) and errors:
-            messages = [e.get("message", "") for e in errors if isinstance(e, dict) and e.get("message")]
+            messages = [
+                e.get("message", "")
+                for e in errors
+                if isinstance(e, dict) and e.get("message")
+            ]
             if messages:
                 return "; ".join(messages)
 
@@ -88,7 +99,10 @@ class FactusInvoiceService:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
                 f"{self.base_url}/v1/municipalities",
-                headers={"Accept": "application/json", "Authorization": f"Bearer {token}"}
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {token}",
+                },
             )
 
         if not response.is_success:
@@ -112,7 +126,9 @@ class FactusInvoiceService:
             if m_code:
                 self._muni_cache[m_code] = m_id
                 if m_code == code:
-                    logger.info(f"Resolved municipality: {m_name} (ID: {m_id}, DANE: {m_code})")
+                    logger.info(
+                        f"Resolved municipality: {m_name} (ID: {m_id}, DANE: {m_code})"
+                    )
 
         return self._muni_cache.get(code) or (int(code) if code.isdigit() else 0)
 
@@ -120,7 +136,11 @@ class FactusInvoiceService:
 
     async def _map_customer(self, invoice: Invoice, token: str) -> dict:
         """Traduce el Customer canónico al formato que Factus espera."""
-        cust_doc_type = invoice.customer.document_type.value if hasattr(invoice.customer.document_type, 'value') else invoice.customer.document_type
+        cust_doc_type = (
+            invoice.customer.document_type.value
+            if hasattr(invoice.customer.document_type, "value")
+            else invoice.customer.document_type
+        )
         customer_doc_id = DOCUMENT_TYPE_TO_FACTUS_ID.get(cust_doc_type)
 
         if customer_doc_id is None:
@@ -130,24 +150,36 @@ class FactusInvoiceService:
             else:
                 raise FactusAPIError(
                     f"Tipo de documento no soportado por Factus: {cust_doc_type}",
-                    status_code=400
+                    status_code=400,
                 )
 
         NIT_DOC_ID = DOCUMENT_TYPE_TO_FACTUS_ID.get("NIT", 6)
         if customer_doc_id == NIT_DOC_ID and not invoice.customer.dv:
             raise FactusAPIError(
                 "El cliente con NIT debe tener el dígito de verificación (DV) configurado",
-                status_code=400
+                status_code=400,
             )
 
-        org_type = invoice.customer.organization_type.value if hasattr(invoice.customer.organization_type, 'value') else invoice.customer.organization_type
-        tribute = invoice.customer.tribute.value if hasattr(invoice.customer.tribute, 'value') else invoice.customer.tribute
+        org_type = (
+            invoice.customer.organization_type.value
+            if hasattr(invoice.customer.organization_type, "value")
+            else invoice.customer.organization_type
+        )
+        tribute = (
+            invoice.customer.tribute.value
+            if hasattr(invoice.customer.tribute, "value")
+            else invoice.customer.tribute
+        )
 
         customer: Dict[str, Any] = {
             "identification_document_id": customer_doc_id,
             "identification": invoice.customer.identification,
-            "legal_organization_id": LEGAL_ORGANIZATION_TO_FACTUS_ID.get(org_type, 2), # Default Natural
-            "tribute_id": CUSTOMER_TRIBUTE_TO_FACTUS_ID.get(tribute, 21), # Default No aplica
+            "legal_organization_id": LEGAL_ORGANIZATION_TO_FACTUS_ID.get(
+                org_type, 2
+            ),  # Default Natural
+            "tribute_id": CUSTOMER_TRIBUTE_TO_FACTUS_ID.get(
+                tribute, 21
+            ),  # Default No aplica
             "names": invoice.customer.names or invoice.customer.company or "",
         }
 
@@ -159,7 +191,9 @@ class FactusInvoiceService:
             customer["phone"] = invoice.customer.phone
         if invoice.customer.municipality_code:
             # Resolvemos el código DANE a ID de Factus
-            customer["municipality_id"] = await self._resolve_municipality_id(invoice.customer.municipality_code, token)
+            customer["municipality_id"] = await self._resolve_municipality_id(
+                invoice.customer.municipality_code, token
+            )
         if invoice.customer.dv:
             customer["dv"] = invoice.customer.dv
         if invoice.customer.company:
@@ -180,10 +214,19 @@ class FactusInvoiceService:
                 "discount_rate": str(item.discount_rate),
                 "price": str(item.price),
                 "tax_rate": str(item.tax_rate),
-                "unit_measure_id": UNIT_MEASURE_TO_FACTUS_ID.get(item.unit_measure_code, 70),  # Por defecto Unidad
-                "standard_code_id": STANDARD_CODE_TO_FACTUS_ID.get(item.standard_code, 1), # Por defecto 1
+                "unit_measure_id": UNIT_MEASURE_TO_FACTUS_ID.get(
+                    item.unit_measure_code, 70
+                ),  # Por defecto Unidad
+                "standard_code_id": STANDARD_CODE_TO_FACTUS_ID.get(
+                    item.standard_code, 1
+                ),  # Por defecto 1
                 "is_excluded": 1 if item.is_excluded else 0,
-                "tribute_id": ITEM_TRIBUTE_TO_FACTUS_ID.get(item.tribute.value if hasattr(item.tribute, 'value') else item.tribute, 1),
+                "tribute_id": ITEM_TRIBUTE_TO_FACTUS_ID.get(
+                    item.tribute.value
+                    if hasattr(item.tribute, "value")
+                    else item.tribute,
+                    1,
+                ),
             }
 
             if item.scheme_id is not None:
@@ -194,13 +237,15 @@ class FactusInvoiceService:
                 item_payload["withholding_taxes"] = [
                     {
                         "code": wt.code,
-                        "withholding_tax_rate": str(wt.withholding_tax_rate)
+                        "withholding_tax_rate": str(wt.withholding_tax_rate),
                     }
                     for wt in item.withholding_taxes
                 ]
             if item.mandate:
                 item_payload["mandate"] = {
-                    "identification_document_id": DOCUMENT_TYPE_TO_FACTUS_ID[item.mandate.document_type.value],
+                    "identification_document_id": DOCUMENT_TYPE_TO_FACTUS_ID[
+                        item.mandate.document_type.value
+                    ],
                     "identification": item.mandate.identification,
                 }
 
@@ -215,14 +260,17 @@ class FactusInvoiceService:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
                 f"{self.base_url}/v1/numbering-ranges",
-                headers={"Accept": "application/json", "Authorization": f"Bearer {token}"},
-                params={"filter[is_active]": 1}
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {token}",
+                },
+                params={"filter[is_active]": 1},
             )
 
         if not response.is_success:
             raise FactusAPIError(
                 self._parse_error(response, "Error al obtener rangos de numeración"),
-                status_code=self._status_code(response)
+                status_code=self._status_code(response),
             )
 
         data = response.json()
@@ -237,13 +285,17 @@ class FactusInvoiceService:
 
         raise FactusAPIError(
             f"No se encontró un rango de numeración activo con prefijo '{prefix}' en Factus",
-            status_code=422
+            status_code=422,
         )
 
-    async def _build_payload(self, invoice: Invoice, numbering_range_id: int, token: str) -> Dict[str, Any]:
+    async def _build_payload(
+        self, invoice: Invoice, numbering_range_id: int, token: str
+    ) -> Dict[str, Any]:
         """Construye el payload completo para la API de Factus a partir del modelo canónico."""
         # Mapeamos payment_method_code si es un alias canónico (ej: "cash_payment" -> "10")
-        raw_pm_code = invoice.payment_method_code.strip() if invoice.payment_method_code else ""
+        raw_pm_code = (
+            invoice.payment_method_code.strip() if invoice.payment_method_code else ""
+        )
         pm_code = PAYMENT_METHOD_TO_FACTUS_CODE.get(raw_pm_code, raw_pm_code)
 
         payload: Dict[str, Any] = {
@@ -264,13 +316,21 @@ class FactusInvoiceService:
             payload["payment_due_date"] = invoice.payment_due_date.isoformat()
 
         if invoice.order_reference:
-            payload["order_reference"] = {"reference_code": invoice.order_reference.reference_code}
+            payload["order_reference"] = {
+                "reference_code": invoice.order_reference.reference_code
+            }
             if invoice.order_reference.issue_date:
-                payload["order_reference"]["issue_date"] = invoice.order_reference.issue_date.isoformat()
+                payload["order_reference"]["issue_date"] = (
+                    invoice.order_reference.issue_date.isoformat()
+                )
 
         if invoice.related_documents:
             payload["related_documents"] = [
-                {"code": doc.code, "issue_date": doc.issue_date.isoformat(), "number": doc.number}
+                {
+                    "code": doc.code,
+                    "issue_date": doc.issue_date.isoformat(),
+                    "number": doc.number,
+                }
                 for doc in invoice.related_documents
             ]
 
@@ -317,17 +377,22 @@ class FactusInvoiceService:
             response = await client.post(
                 f"{self.base_url}/v1/bills/validate",
                 json=payload,
-                headers={"Accept": "application/json", "Authorization": f"Bearer {token}"},
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {token}",
+                },
             )
 
         if not response.is_success:
             logger.error(
                 "Factus create_invoice failed — status=%s body=%s prefix=%s",
-                response.status_code, response.text, invoice.numbering_range_prefix,
+                response.status_code,
+                response.text,
+                invoice.numbering_range_prefix,
             )
             raise FactusAPIError(
                 self._parse_error(response, "Error al validar la factura"),
-                status_code=self._status_code(response)
+                status_code=self._status_code(response),
             )
 
         response_json = response.json()
@@ -344,17 +409,22 @@ class FactusInvoiceService:
             message=response_json.get("message", "Success"),
         )
 
-    async def _download(self, endpoint: str, number: str, token: str, extension: str) -> DownloadResult:
+    async def _download(
+        self, endpoint: str, number: str, token: str, extension: str
+    ) -> DownloadResult:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
                 f"{self.base_url}/{endpoint}/{number}",
-                headers={"Accept": "application/json", "Authorization": f"Bearer {token}"},
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {token}",
+                },
             )
 
         if not response.is_success:
             raise FactusAPIError(
                 self._parse_error(response, "Error al descargar el archivo"),
-                status_code=self._status_code(response)
+                status_code=self._status_code(response),
             )
 
         data = response.json().get("data", {})
@@ -374,34 +444,44 @@ class FactusInvoiceService:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
                 f"{self.base_url}/v1/bills/show/{number}",
-                headers={"Accept": "application/json", "Authorization": f"Bearer {token}"},
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {token}",
+                },
             )
 
         if not response.is_success:
             raise FactusAPIError(
                 self._parse_error(response, "Error al obtener la factura"),
-                status_code=self._status_code(response)
+                status_code=self._status_code(response),
             )
 
         response_json = response.json()
         return InvoiceDataResult(**response_json)
 
-    async def delete_invoice(self, reference_code: str, token: str) -> DeleteInvoiceResult:
+    async def delete_invoice(
+        self, reference_code: str, token: str
+    ) -> DeleteInvoiceResult:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.delete(
                 f"{self.base_url}/v1/bills/destroy/reference/{reference_code}",
-                headers={"Accept": "application/json", "Authorization": f"Bearer {token}"},
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {token}",
+                },
             )
 
         if not response.is_success:
             raise FactusAPIError(
                 self._parse_error(response, "Error al eliminar la factura"),
-                status_code=self._status_code(response)
+                status_code=self._status_code(response),
             )
 
         return DeleteInvoiceResult(**response.json())
 
-    async def send_email(self, number: str, request: SendEmailRequest, token: str) -> None:
+    async def send_email(
+        self, number: str, request: SendEmailRequest, token: str
+    ) -> None:
         payload: dict = {"email": request.email}
         if request.pdf_base_64_encoded:
             payload["pdf_base_64_encoded"] = request.pdf_base_64_encoded
@@ -410,26 +490,32 @@ class FactusInvoiceService:
             response = await client.post(
                 f"{self.base_url}/v1/bills/send-email/{number}",
                 json=payload,
-                headers={"Accept": "application/json", "Authorization": f"Bearer {token}"},
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {token}",
+                },
             )
 
         if not response.is_success:
             raise FactusAPIError(
                 self._parse_error(response, "Error al enviar el correo"),
-                status_code=self._status_code(response)
+                status_code=self._status_code(response),
             )
 
     async def get_invoice_events(self, number: str, token: str) -> InvoiceEventsResult:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
                 f"{self.base_url}/v1/bills/{number}/radian/events",
-                headers={"Accept": "application/json", "Authorization": f"Bearer {token}"},
+                headers={
+                    "Accept": "application/json",
+                    "Authorization": f"Bearer {token}",
+                },
             )
 
         if not response.is_success:
             raise FactusAPIError(
                 self._parse_error(response, "Error al obtener eventos de la factura"),
-                status_code=self._status_code(response)
+                status_code=self._status_code(response),
             )
 
         return InvoiceEventsResult(**response.json())

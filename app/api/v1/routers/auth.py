@@ -7,29 +7,21 @@ Auth endpoints for factus-api.
 The /login (local mock) endpoint has been removed. All callers
 must authenticate using the shared X-API-Key header instead.
 """
+
 from fastapi import APIRouter, HTTPException, Depends
 from app.schemas.auth import LoginRequest, RefreshTokenRequest
 from app.core.exceptions import FactusAPIError
 from app.schemas.auth_token import AuthToken
-from app.services.factus_auth_service import FactusAuthService
-from app.core.config import settings
-from app.api.deps import verify_api_key
+from app.services.interfaces import AuthService
+from app.api.deps import verify_api_key, get_auth_service
 
 router = APIRouter()
-
-
-def get_auth_service() -> FactusAuthService:
-    return FactusAuthService(
-        base_url=settings.FACTUS_BASE_URL,
-        client_id=settings.FACTUS_CLIENT_ID,
-        client_secret=settings.FACTUS_CLIENT_SECRET,
-    )
 
 
 @router.post("/factus/login", response_model=AuthToken)
 async def login_factus(
     request: LoginRequest,
-    service: FactusAuthService = Depends(get_auth_service),
+    service: AuthService = Depends(get_auth_service),
     _: str = Depends(verify_api_key),
 ):
     """
@@ -48,7 +40,7 @@ async def login_factus(
 @router.post("/factus/refresh", response_model=AuthToken)
 async def refresh_factus_token(
     request: RefreshTokenRequest,
-    service: FactusAuthService = Depends(get_auth_service),
+    service: AuthService = Depends(get_auth_service),
     _: str = Depends(verify_api_key),
 ):
     """

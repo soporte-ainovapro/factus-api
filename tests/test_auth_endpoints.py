@@ -3,6 +3,7 @@ Integration tests for auth endpoints.
 With API Key auth, there is no longer a local /login endpoint.
 Tests verify /factus/login and /factus/refresh require X-API-Key.
 """
+
 import pytest
 from unittest.mock import AsyncMock
 from fastapi.testclient import TestClient
@@ -10,7 +11,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.api.deps import verify_api_key
 from app.schemas.auth_token import AuthToken
-from app.services.factus_auth_service import FactusAuthService
+from app.services.providers.factus.factus_auth_service import FactusAuthService
 
 TEST_API_KEY = "test-api-key-for-pytest"
 VALID_API_KEY_HEADER = {"X-API-Key": TEST_API_KEY}

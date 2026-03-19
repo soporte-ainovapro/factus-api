@@ -5,17 +5,22 @@ from pydantic import BaseModel, EmailStr
 from app.core.exceptions import FactusAPIError
 from app.schemas.invoice import Invoice
 from app.schemas.results import (
-    InvoiceResult, DownloadResult, InvoiceDataResult,
-    DeleteInvoiceResult, InvoiceEventsResult, InvoiceEvent,
+    InvoiceResult,
+    DownloadResult,
+    InvoiceDataResult,
+    DeleteInvoiceResult,
+    InvoiceEventsResult,
+    InvoiceEvent,
 )
 from app.schemas.invoice import SendEmailRequest
-from app.services.factus_invoice_service import FactusInvoiceService
+from app.services.interfaces import InvoiceService
 from app.api.deps import verify_api_key, get_invoice_service
 
 router = APIRouter()
 
 
 # ── Request schemas (API layer) ──────────────────────────────────────────────
+
 
 class SendEmailRequestSchema(BaseModel):
     email: EmailStr
@@ -24,11 +29,12 @@ class SendEmailRequestSchema(BaseModel):
 
 # ── Routes ───────────────────────────────────────────────────────────────────
 
+
 @router.post("/", response_model=InvoiceResult)
 async def create_invoice(
     invoice: Invoice,
     x_factus_token: str = Header(...),
-    service: FactusInvoiceService = Depends(get_invoice_service),
+    service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:
@@ -43,7 +49,7 @@ async def create_invoice(
 async def get_pdf(
     number: str,
     x_factus_token: str = Header(...),
-    service: FactusInvoiceService = Depends(get_invoice_service),
+    service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:
@@ -58,7 +64,7 @@ async def get_pdf(
 async def get_xml(
     number: str,
     x_factus_token: str = Header(...),
-    service: FactusInvoiceService = Depends(get_invoice_service),
+    service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:
@@ -73,7 +79,7 @@ async def get_xml(
 async def get_invoice_events(
     number: str,
     x_factus_token: str = Header(...),
-    service: FactusInvoiceService = Depends(get_invoice_service),
+    service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:
@@ -89,7 +95,7 @@ async def get_invoice_events(
 async def get_invoice(
     number: str,
     x_factus_token: str = Header(...),
-    service: FactusInvoiceService = Depends(get_invoice_service),
+    service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:
@@ -105,7 +111,7 @@ async def get_invoice(
 async def delete_invoice(
     reference_code: str,
     x_factus_token: str = Header(...),
-    service: FactusInvoiceService = Depends(get_invoice_service),
+    service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:
@@ -121,7 +127,7 @@ async def send_email(
     number: str,
     body: SendEmailRequestSchema,
     x_factus_token: str = Header(...),
-    service: FactusInvoiceService = Depends(get_invoice_service),
+    service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
     try:

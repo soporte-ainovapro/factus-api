@@ -22,11 +22,7 @@ client = TestClient(app)
 
 @pytest.fixture
 def numbering_range_gateway_mock():
-    with patch(
-        "app.api.v1.routers.numbering_ranges.FactusNumberingRangeService"
-    ) as MockGateway:
-        mock_instance = MockGateway.return_value
-        yield mock_instance
+    return AsyncMock()
 
 
 @pytest.fixture

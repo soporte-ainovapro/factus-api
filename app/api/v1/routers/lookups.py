@@ -11,12 +11,11 @@ from app.schemas.lookup import (
     ReferenceEntry,
     ReferenceEntryInt,
 )
-from app.services.factus_lookup_service import FactusLookupService
-from app.core.config import settings
-
-from app.api.deps import verify_api_key
+from app.services.interfaces import LookupService
+from app.api.deps import verify_api_key, get_lookup_service
 
 router = APIRouter()
+
 
 # ---------------------------------------------------------------------------
 # Tablas de referencia fijas (norma DIAN) — actualizadas desde la documentación
@@ -72,10 +71,6 @@ _REFERENCE_TABLES = ReferenceTables(
 )
 
 
-def get_lookup_service() -> FactusLookupService:
-    return FactusLookupService(base_url=settings.FACTUS_BASE_URL)
-
-
 @router.get("/reference-tables", response_model=ReferenceTables)
 async def get_reference_tables(_: str = Depends(verify_api_key)):
     """
@@ -90,7 +85,7 @@ async def get_reference_tables(_: str = Depends(verify_api_key)):
 @router.get("/municipalities", response_model=List[Municipality])
 async def get_municipalities(
     x_factus_token: str = Header(...),
-    service: FactusLookupService = Depends(get_lookup_service),
+    service: LookupService = Depends(get_lookup_service),
     _: str = Depends(verify_api_key),
 ):
     try:
@@ -105,7 +100,7 @@ async def get_municipalities(
 @router.get("/taxes", response_model=List[Tax])
 async def get_taxes(
     x_factus_token: str = Header(...),
-    service: FactusLookupService = Depends(get_lookup_service),
+    service: LookupService = Depends(get_lookup_service),
     _: str = Depends(verify_api_key),
 ):
     try:
@@ -120,7 +115,7 @@ async def get_taxes(
 @router.get("/units", response_model=List[Unit])
 async def get_units(
     x_factus_token: str = Header(...),
-    service: FactusLookupService = Depends(get_lookup_service),
+    service: LookupService = Depends(get_lookup_service),
     _: str = Depends(verify_api_key),
 ):
     try:
@@ -136,7 +131,7 @@ async def get_units(
 async def get_countries(
     x_factus_token: str = Header(...),
     name: Optional[str] = Query(None, description="Filtrar por nombre del país"),
-    service: FactusLookupService = Depends(get_lookup_service),
+    service: LookupService = Depends(get_lookup_service),
     _: str = Depends(verify_api_key),
 ):
     try:
@@ -157,7 +152,7 @@ async def get_acquirer(
     identification_number: str = Query(
         ..., description="Número de documento del adquiriente"
     ),
-    service: FactusLookupService = Depends(get_lookup_service),
+    service: LookupService = Depends(get_lookup_service),
     _: str = Depends(verify_api_key),
 ):
     """

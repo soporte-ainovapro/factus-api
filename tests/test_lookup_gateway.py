@@ -3,11 +3,19 @@ Unit tests for FactusLookupService.
 
 All HTTP calls are mocked — no real network requests.
 """
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.services.factus_lookup_service import FactusLookupService
-from app.schemas.lookup import Municipality, Tax, Unit, NumberingRange, Country, Acquirer
+from app.services.providers.factus.factus_lookup_service import FactusLookupService
+from app.schemas.lookup import (
+    Municipality,
+    Tax,
+    Unit,
+    NumberingRange,
+    Country,
+    Acquirer,
+)
 from app.core.exceptions import FactusAPIError
 
 BASE_URL = "https://api-sandbox.factus.com.co"
@@ -28,6 +36,7 @@ def mock_response(status_code: int, json_body: dict) -> MagicMock:
     def raise_for_status():
         if not r.is_success:
             from httpx import HTTPStatusError, Request, Response
+
             raise HTTPStatusError(
                 message=f"HTTP {status_code}",
                 request=MagicMock(),
@@ -41,6 +50,7 @@ def mock_response(status_code: int, json_body: dict) -> MagicMock:
 # ---------------------------------------------------------------------------
 # get_municipalities()
 # ---------------------------------------------------------------------------
+
 
 class TestGetMunicipalities:
     @pytest.mark.asyncio
@@ -124,12 +134,18 @@ class TestGetMunicipalities:
 # get_tax_types()
 # ---------------------------------------------------------------------------
 
+
 class TestGetTaxTypes:
     @pytest.mark.asyncio
     async def test_returns_list_of_taxes(self):
         gateway = make_gateway()
         api_data = [
-            {"id": 1, "name": "IVA", "code": "01", "description": "Impuesto al valor agregado"},
+            {
+                "id": 1,
+                "name": "IVA",
+                "code": "01",
+                "description": "Impuesto al valor agregado",
+            },
         ]
         fake_resp = mock_response(200, {"data": api_data})
 
@@ -186,6 +202,7 @@ class TestGetTaxTypes:
 # get_units()
 # ---------------------------------------------------------------------------
 
+
 class TestGetUnits:
     @pytest.mark.asyncio
     async def test_returns_list_of_units(self):
@@ -210,6 +227,7 @@ class TestGetUnits:
 # ---------------------------------------------------------------------------
 # get_numbering_ranges()
 # ---------------------------------------------------------------------------
+
 
 class TestGetNumberingRanges:
     @pytest.mark.asyncio
@@ -251,6 +269,7 @@ class TestGetNumberingRanges:
 # ---------------------------------------------------------------------------
 # get_countries()
 # ---------------------------------------------------------------------------
+
 
 class TestGetCountries:
     @pytest.mark.asyncio
@@ -315,6 +334,7 @@ class TestGetCountries:
 # get_acquirer()
 # ---------------------------------------------------------------------------
 
+
 class TestGetAcquirer:
     @pytest.mark.asyncio
     async def test_returns_acquirer_data(self):
@@ -329,7 +349,9 @@ class TestGetAcquirer:
         mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
 
         with patch("httpx.AsyncClient", return_value=mock_async_ctx):
-            result = await gateway.get_acquirer(TOKEN, identification_document_id=6, identification_number="900123456")
+            result = await gateway.get_acquirer(
+                TOKEN, identification_document_id=6, identification_number="900123456"
+            )
 
         assert isinstance(result, Acquirer)
         assert result.name == "Empresa XYZ SAS"
@@ -348,7 +370,9 @@ class TestGetAcquirer:
         mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
 
         with patch("httpx.AsyncClient", return_value=mock_async_ctx):
-            await gateway.get_acquirer(TOKEN, identification_document_id=3, identification_number="12345678")
+            await gateway.get_acquirer(
+                TOKEN, identification_document_id=3, identification_number="12345678"
+            )
 
         params = mock_client.get.call_args.kwargs["params"]
         assert params["identification_document_id"] == 3
@@ -367,6 +391,10 @@ class TestGetAcquirer:
 
         with patch("httpx.AsyncClient", return_value=mock_async_ctx):
             with pytest.raises(FactusAPIError) as exc_info:
-                await gateway.get_acquirer(TOKEN, identification_document_id=6, identification_number="000000000")
+                await gateway.get_acquirer(
+                    TOKEN,
+                    identification_document_id=6,
+                    identification_number="000000000",
+                )
 
         assert exc_info.value.status_code == 404

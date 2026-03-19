@@ -12,7 +12,7 @@ from app.schemas.lookup import (
     Acquirer,
 )
 from app.core.exceptions import FactusAPIError
-from app.services.factus_lookup_service import FactusLookupService
+from app.services.providers.factus.factus_lookup_service import FactusLookupService
 
 FACTUS_TOKEN_HEADER = {"x-factus-token": "fake-factus-token"}
 

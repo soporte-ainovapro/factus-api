@@ -4,6 +4,7 @@ Integration tests for the invoice endpoints.
 Uses FastAPI's TestClient (synchronous) with mocked gateways.
 The API Key auth dependency is overridden via dependency_overrides.
 """
+
 import pytest
 from unittest.mock import AsyncMock
 from fastapi.testclient import TestClient
@@ -11,11 +12,14 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.api.deps import verify_api_key, get_invoice_service
 from app.schemas.results import (
-    InvoiceResult, DownloadResult, InvoiceDataResult,
-    DeleteInvoiceResult, InvoiceEventsResult,
+    InvoiceResult,
+    DownloadResult,
+    InvoiceDataResult,
+    DeleteInvoiceResult,
+    InvoiceEventsResult,
 )
 from app.core.exceptions import FactusAPIError
-from app.services.factus_invoice_service import FactusInvoiceService
+from app.services.providers.factus.factus_invoice_service import FactusInvoiceService
 from tests.conftest import VALID_INVOICE_PAYLOAD
 
 FACTUS_TOKEN_HEADER = {"x-factus-token": "fake-factus-token"}
@@ -24,14 +28,16 @@ FACTUS_TOKEN_HEADER = {"x-factus-token": "fake-factus-token"}
 class TestCreateInvoice:
     def test_create_invoice_success(self):
         mock_gw = AsyncMock(spec=FactusInvoiceService)
-        mock_gw.create_invoice = AsyncMock(return_value=InvoiceResult(
-            number="SETT-1",
-            prefix="SETT",
-            cufe="abc123cufe",
-            qr_url="https://qr.example.com",
-            status="1",
-            message="Factura validada",
-        ))
+        mock_gw.create_invoice = AsyncMock(
+            return_value=InvoiceResult(
+                number="SETT-1",
+                prefix="SETT",
+                cufe="abc123cufe",
+                qr_url="https://qr.example.com",
+                status="1",
+                message="Factura validada",
+            )
+        )
 
         app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_invoice_service] = lambda: mock_gw
@@ -78,7 +84,6 @@ class TestCreateInvoice:
         )
         assert response.status_code in (401, 403)
 
-
     def test_create_invoice_requires_factus_token_header(self):
         app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         client = TestClient(app)
@@ -107,11 +112,9 @@ class TestCreateInvoice:
 class TestGetInvoice:
     def test_get_invoice_success(self):
         mock_gw = AsyncMock(spec=FactusInvoiceService)
-        mock_gw.get_invoice = AsyncMock(return_value=InvoiceDataResult(
-            status="success",
-            message="OK",
-            data={}
-        ))
+        mock_gw.get_invoice = AsyncMock(
+            return_value=InvoiceDataResult(status="success", message="OK", data={})
+        )
 
         app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_invoice_service] = lambda: mock_gw
@@ -141,11 +144,13 @@ class TestGetInvoice:
 class TestDownloadInvoice:
     def test_download_pdf_success(self):
         mock_gw = AsyncMock(spec=FactusInvoiceService)
-        mock_gw.download_pdf = AsyncMock(return_value=DownloadResult(
-            file_name="SETT-1.pdf",
-            file_content="base64content",
-            extension="pdf",
-        ))
+        mock_gw.download_pdf = AsyncMock(
+            return_value=DownloadResult(
+                file_name="SETT-1.pdf",
+                file_content="base64content",
+                extension="pdf",
+            )
+        )
 
         app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_invoice_service] = lambda: mock_gw
@@ -159,11 +164,13 @@ class TestDownloadInvoice:
 
     def test_download_xml_success(self):
         mock_gw = AsyncMock(spec=FactusInvoiceService)
-        mock_gw.download_xml = AsyncMock(return_value=DownloadResult(
-            file_name="SETT-1.xml",
-            file_content="base64content",
-            extension="xml",
-        ))
+        mock_gw.download_xml = AsyncMock(
+            return_value=DownloadResult(
+                file_name="SETT-1.xml",
+                file_content="base64content",
+                extension="xml",
+            )
+        )
 
         app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_invoice_service] = lambda: mock_gw
@@ -179,10 +186,12 @@ class TestDownloadInvoice:
 class TestDeleteInvoice:
     def test_delete_invoice_success(self):
         mock_gw = AsyncMock(spec=FactusInvoiceService)
-        mock_gw.delete_invoice = AsyncMock(return_value=DeleteInvoiceResult(
-            status="success",
-            message="Factura eliminada",
-        ))
+        mock_gw.delete_invoice = AsyncMock(
+            return_value=DeleteInvoiceResult(
+                status="success",
+                message="Factura eliminada",
+            )
+        )
 
         app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_invoice_service] = lambda: mock_gw
@@ -237,11 +246,13 @@ class TestSendEmail:
 class TestGetInvoiceEvents:
     def test_get_events_success(self):
         mock_gw = AsyncMock(spec=FactusInvoiceService)
-        mock_gw.get_invoice_events = AsyncMock(return_value=InvoiceEventsResult(
-            status="success",
-            message="OK",
-            data=[],
-        ))
+        mock_gw.get_invoice_events = AsyncMock(
+            return_value=InvoiceEventsResult(
+                status="success",
+                message="OK",
+                data=[],
+            )
+        )
 
         app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
         app.dependency_overrides[get_invoice_service] = lambda: mock_gw

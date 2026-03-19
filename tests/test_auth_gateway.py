@@ -3,10 +3,11 @@ Unit tests for FactusAuthService.
 
 All HTTP calls are mocked via unittest.mock — no real network requests.
 """
+
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 
-from app.services.factus_auth_service import FactusAuthService
+from app.services.providers.factus.factus_auth_service import FactusAuthService
 from app.schemas.auth_token import AuthToken
 
 BASE_URL = "https://api-sandbox.factus.com.co"
@@ -41,6 +42,7 @@ def mock_response(status_code: int, json_body: dict) -> MagicMock:
 # ---------------------------------------------------------------------------
 # authenticate()
 # ---------------------------------------------------------------------------
+
 
 class TestAuthenticate:
     @pytest.mark.asyncio
@@ -139,6 +141,7 @@ class TestAuthenticate:
 # refresh_token()
 # ---------------------------------------------------------------------------
 
+
 class TestRefreshToken:
     @pytest.mark.asyncio
     async def test_returns_new_auth_token(self):
@@ -194,6 +197,7 @@ class TestRefreshToken:
 # ---------------------------------------------------------------------------
 # _parse_error() — internal helper
 # ---------------------------------------------------------------------------
+
 
 class TestParseError:
     def test_prefers_message_field(self):
