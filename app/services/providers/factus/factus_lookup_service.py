@@ -5,7 +5,6 @@ from app.schemas.lookup import (
     Municipality,
     Unit,
     Tax,
-    NumberingRange,
     Country,
     Acquirer,
 )
@@ -111,12 +110,6 @@ class FactusLookupService:
         data = await self._get("v1/measurement-units", token=token)
 
         return [Unit(**item) for item in data]
-
-    async def get_numbering_ranges(self, token: str) -> List[NumberingRange]:
-
-        data = await self._get("v1/numbering-ranges", token=token)
-
-        return [NumberingRange(**item) for item in data]
 
     async def get_countries(
         self, token: str, name: Optional[str] = None

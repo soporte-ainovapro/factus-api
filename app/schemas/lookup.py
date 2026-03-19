@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel
 from typing import List, Optional
 
 
@@ -19,20 +19,6 @@ class Tax(LookupBase):
 
 class Unit(LookupBase):
     code: str
-
-
-class NumberingRange(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    id: int
-    document: str
-    prefix: str
-    from_number: Optional[int] = Field(None, alias="from")
-    to_number: Optional[int] = Field(None, alias="to")
-    current: Optional[int] = None
-    resolution_number: Optional[str] = None
-    technical_key: Optional[str] = None
-    is_active: bool
 
 
 class Country(BaseModel):

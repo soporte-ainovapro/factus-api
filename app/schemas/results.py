@@ -43,9 +43,6 @@ class DeleteInvoiceResult(BaseModel):
     status: str
     message: str
 
-    status: str
-    message: str
-
 
 class InvoiceEvent(BaseModel):
     """Evento RADIAN asociado a una factura."""
