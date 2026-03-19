@@ -16,8 +16,8 @@
                             "script": {
                                 "exec": [
                                     "var jsonData = pm.response.json();",
-                                    "pm.collectionVariables.set(\"factus_token\", jsonData.data.access_token);",
-                                    "pm.collectionVariables.set(\"factus_refresh_token\", jsonData.data.refresh_token);"
+                                    "pm.collectionVariables.set(\"factus_token\", jsonData.access_token);",
+                                    "pm.collectionVariables.set(\"factus_refresh_token\", jsonData.refresh_token);"
                                 ],
                                 "type": "text/javascript"
                             }
@@ -62,7 +62,7 @@
                             "script": {
                                 "exec": [
                                     "var jsonData = pm.response.json();",
-                                    "pm.collectionVariables.set(\"factus_token\", jsonData.data.access_token);"
+                                    "pm.collectionVariables.set(\"factus_token\", jsonData.access_token);"
                                 ],
                                 "type": "text/javascript"
                             }
@@ -337,7 +337,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"document\": \"invoice\",\n    \"numbering_range_id\": 8,\n    \"reference_code\": \"{{reference_code}}\",\n    \"observation\": \"Prueba de factura\",\n    \"payment_method\": \"cash_payment\",\n    \"payment_form\": \"cash\",\n    \"customer\": {\n        \"identification_document_type\": \"CC\",\n        \"identification\": \"123456789\",\n        \"names\": \"Juan Perez\",\n        \"address\": \"Calle 123\",\n        \"email\": \"juan@example.com\",\n        \"phone\": \"3001234567\",\n        \"municipality_id\": 980,\n        \"legal_organization\": \"person\",\n        \"tribute\": \"ZZ\"\n    },\n    \"items\": [\n        {\n            \"code_reference\": \"PROD-001\",\n            \"name\": \"Producto de prueba\",\n            \"quantity\": 1,\n            \"price\": \"10000.00\",\n            \"discount_rate\": \"0.00\",\n            \"tax_rate\": \"19.00\",\n            \"unit_measure\": \"94\",\n            \"standard_code\": \"1\",\n            \"is_excluded\": 0,\n            \"tribute\": \"IVA\"\n        }\n    ]\n}",
+                                                         "raw": "{\n    \"document_type\": \"invoice\",\n    \"numbering_range_prefix\": \"SETP\",\n    \"reference_code\": \"{{reference_code}}\",\n    \"observation\": \"Prueba de factura\",\n    \"payment_method_code\": \"10\",\n    \"payment_form\": \"cash\",\n    \"customer\": {\n        \"document_type\": \"CC\",\n        \"identification\": \"123456789\",\n        \"names\": \"Juan Perez\",\n        \"address\": \"Calle 123\",\n        \"email\": \"juan@example.com\",\n        \"phone\": \"3001234567\",\n        \"municipality_code\": \"05001\",\n        \"organization_type\": \"person\",\n        \"tribute\": \"ZZ\"\n    },\n    \"items\": [\n        {\n            \"code_reference\": \"PROD-001\",\n            \"name\": \"Producto de prueba\",\n            \"quantity\": 1,\n            \"price\": \"10000.00\",\n            \"discount_rate\": \"0.00\",\n            \"tax_rate\": \"19.00\",\n            \"unit_measure_code\": \"94\",\n            \"standard_code\": \"1\",\n            \"is_excluded\": false,\n            \"tribute\": \"IVA\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -851,12 +851,12 @@
     "variable": [
         {
             "key": "base_url",
-            "value": "http://localhost:8000/api/v1",
+            "value": "http://localhost:8000/api",
             "type": "string"
         },
         {
             "key": "api_key",
-            "value": "baiji-internal-secret-key-dev-2024-change-in-production",
+            "value": "2f83274d19336cef93aeb1572faaf0de90c13daa0d560ae968da3d5cb1ec8d16",
             "type": "string"
         },
         {
