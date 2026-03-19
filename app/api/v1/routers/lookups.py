@@ -146,8 +146,12 @@ async def get_countries(
 @router.get("/acquirer", response_model=Acquirer)
 async def get_acquirer(
     x_factus_token: str = Header(...),
-    identification_document_id: int = Query(
-        ..., description="ID del tipo de documento de identidad (ver /reference-tables)"
+    identification_document_type: str = Query(
+        ...,
+        description=(
+            "Código canónico del tipo de documento (ej: 'CC', 'NIT', 'TI'). "
+            "Ver /reference-tables."
+        ),
     ),
     identification_number: str = Query(
         ..., description="Número de documento del adquiriente"
@@ -162,7 +166,7 @@ async def get_acquirer(
     try:
         data = await service.get_acquirer(
             x_factus_token,
-            identification_document_id=identification_document_id,
+            identification_document_type=identification_document_type,
             identification_number=identification_number,
         )
         return data

@@ -39,7 +39,7 @@ class LookupService(Protocol):
         self, token: str, name: Optional[str] = None
     ) -> List[Any]: ...
     async def get_acquirer(
-        self, token: str, identification_document_id: int, identification_number: str
+        self, token: str, identification_document_type: str, identification_number: str
     ) -> Any: ...
 
 

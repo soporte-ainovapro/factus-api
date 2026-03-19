@@ -193,7 +193,7 @@ class TestGetCountriesEndpoint:
 
 
 class TestGetAcquirerEndpoint:
-    def test_success(self):
+    def test_success_with_int_id(self):
         from app.api.v1.routers.lookups import get_lookup_service
 
         mock_gw = AsyncMock(spec=FactusLookupService)
@@ -209,7 +209,7 @@ class TestGetAcquirerEndpoint:
 
         client = TestClient(app)
         response = client.get(
-            "/api/lookups/acquirer?identification_document_id=6&identification_number=900123456",
+            "/api/lookups/acquirer?identification_document_type=6&identification_number=900123456",
             headers=FACTUS_TOKEN_HEADER,
         )
 
@@ -218,6 +218,32 @@ class TestGetAcquirerEndpoint:
         body = response.json()
         assert body["name"] == "Empresa ABC"
         assert body["email"] == "abc@empresa.com"
+
+    def test_success_with_string_code(self):
+        """backend-baiji puede enviar 'CC' en lugar del ID entero 3."""
+        from app.api.v1.routers.lookups import get_lookup_service
+
+        mock_gw = AsyncMock(spec=FactusLookupService)
+        mock_gw.get_acquirer = AsyncMock(
+            return_value=Acquirer(
+                name="Juan Pérez",
+                email="juan@example.com",
+            )
+        )
+
+        app.dependency_overrides[verify_api_key] = lambda: "admin-api-key"
+        app.dependency_overrides[get_lookup_service] = lambda: mock_gw
+
+        client = TestClient(app)
+        response = client.get(
+            "/api/lookups/acquirer?identification_document_type=CC&identification_number=1399996",
+            headers=FACTUS_TOKEN_HEADER,
+        )
+
+        app.dependency_overrides.clear()
+        assert response.status_code == 200
+        body = response.json()
+        assert body["name"] == "Juan Pérez"
 
     def test_missing_required_params_returns_422(self):
         client = get_test_client()
@@ -238,7 +264,7 @@ class TestGetAcquirerEndpoint:
 
         client = TestClient(app)
         response = client.get(
-            "/api/lookups/acquirer?identification_document_id=6&identification_number=000000000",
+            "/api/lookups/acquirer?identification_document_type=6&identification_number=000000000",
             headers=FACTUS_TOKEN_HEADER,
         )
 

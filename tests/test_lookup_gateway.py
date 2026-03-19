@@ -337,7 +337,8 @@ class TestGetCountries:
 
 class TestGetAcquirer:
     @pytest.mark.asyncio
-    async def test_returns_acquirer_data(self):
+    async def test_returns_acquirer_data_with_string_int(self):
+        """Passing an integer string like '6' (NIT) should work."""
         gateway = make_gateway()
         api_data = {"name": "Empresa XYZ SAS", "email": "contacto@xyz.com"}
         fake_resp = mock_response(200, {"data": api_data})
@@ -350,7 +351,9 @@ class TestGetAcquirer:
 
         with patch("httpx.AsyncClient", return_value=mock_async_ctx):
             result = await gateway.get_acquirer(
-                TOKEN, identification_document_id=6, identification_number="900123456"
+                TOKEN,
+                identification_document_type="6",
+                identification_number="900123456",
             )
 
         assert isinstance(result, Acquirer)
@@ -358,7 +361,54 @@ class TestGetAcquirer:
         assert result.email == "contacto@xyz.com"
 
     @pytest.mark.asyncio
-    async def test_sends_correct_query_params(self):
+    async def test_translates_canonical_code_to_factus_id(self):
+        """'CC' should be translated to integer 3 before calling Factus."""
+        gateway = make_gateway()
+        api_data = {"name": "Juan Pérez", "email": "juan@example.com"}
+        fake_resp = mock_response(200, {"data": api_data})
+
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=fake_resp)
+        mock_async_ctx = MagicMock()
+        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+            result = await gateway.get_acquirer(
+                TOKEN,
+                identification_document_type="CC",
+                identification_number="1399996",
+            )
+
+        params = mock_client.get.call_args.kwargs["params"]
+        assert params["identification_document_id"] == 3  # CC → 3
+        assert isinstance(result, Acquirer)
+
+    @pytest.mark.asyncio
+    async def test_translates_nit_code_to_factus_id(self):
+        """'NIT' should be translated to integer 6."""
+        gateway = make_gateway()
+        api_data = {"name": "Test Corp", "email": "test@corp.com"}
+        fake_resp = mock_response(200, {"data": api_data})
+
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=fake_resp)
+        mock_async_ctx = MagicMock()
+        mock_async_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_async_ctx.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("httpx.AsyncClient", return_value=mock_async_ctx):
+            await gateway.get_acquirer(
+                TOKEN,
+                identification_document_type="NIT",
+                identification_number="900123456",
+            )
+
+        params = mock_client.get.call_args.kwargs["params"]
+        assert params["identification_document_id"] == 6  # NIT → 6
+
+    @pytest.mark.asyncio
+    async def test_sends_correct_query_params_with_int_string(self):
         gateway = make_gateway()
         api_data = {"name": "Test", "email": "test@test.com"}
         fake_resp = mock_response(200, {"data": api_data})
@@ -371,12 +421,28 @@ class TestGetAcquirer:
 
         with patch("httpx.AsyncClient", return_value=mock_async_ctx):
             await gateway.get_acquirer(
-                TOKEN, identification_document_id=3, identification_number="12345678"
+                TOKEN,
+                identification_document_type="3",
+                identification_number="12345678",
             )
 
         params = mock_client.get.call_args.kwargs["params"]
         assert params["identification_document_id"] == 3
         assert params["identification_number"] == "12345678"
+
+    @pytest.mark.asyncio
+    async def test_raises_on_invalid_code(self):
+        """An unrecognized non-numeric string raises FactusAPIError 422."""
+        gateway = make_gateway()
+
+        with pytest.raises(FactusAPIError) as exc_info:
+            await gateway.get_acquirer(
+                TOKEN,
+                identification_document_type="INVALID",
+                identification_number="123",
+            )
+
+        assert exc_info.value.status_code == 422
 
     @pytest.mark.asyncio
     async def test_raises_factus_api_error_on_http_error(self):
@@ -393,7 +459,7 @@ class TestGetAcquirer:
             with pytest.raises(FactusAPIError) as exc_info:
                 await gateway.get_acquirer(
                     TOKEN,
-                    identification_document_id=6,
+                    identification_document_type="6",
                     identification_number="000000000",
                 )
 
