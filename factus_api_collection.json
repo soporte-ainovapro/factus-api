@@ -6,59 +6,10 @@
     },
     "item": [
         {
-            "name": "Local Auth",
+            "name": "Factus Auth",
             "item": [
                 {
-                    "name": "1. Local Login",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "exec": [
-                                    "var jsonData = pm.response.json();",
-                                    "pm.collectionVariables.set(\"local_jwt\", jsonData.access_token);"
-                                ],
-                                "type": "text/javascript"
-                            }
-                        }
-                    ],
-                    "request": {
-                        "method": "POST",
-                        "header": [],
-                        "body": {
-                            "mode": "formdata",
-                            "formdata": [
-                                {
-                                    "key": "username",
-                                    "value": "admin",
-                                    "type": "text"
-                                },
-                                {
-                                    "key": "password",
-                                    "value": "admin123",
-                                    "type": "text"
-                                }
-                            ]
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/auth/login",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "auth",
-                                "login"
-                            ]
-                        }
-                    }
-                }
-            ]
-        },
-        {
-            "name": "Factus Auth (Protected)",
-            "item": [
-                {
-                    "name": "2. Factus Login",
+                    "name": "1. Factus Login",
                     "event": [
                         {
                             "listen": "test",
@@ -74,7 +25,13 @@
                     ],
                     "request": {
                         "method": "POST",
-                        "header": [],
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            }
+                        ],
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"email\": \"tu_email@factus.com\",\n    \"password\": \"tu_password\"\n}",
@@ -98,7 +55,7 @@
                     }
                 },
                 {
-                    "name": "3. Factus Refresh Token",
+                    "name": "2. Factus Refresh Token",
                     "event": [
                         {
                             "listen": "test",
@@ -113,7 +70,13 @@
                     ],
                     "request": {
                         "method": "POST",
-                        "header": [],
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            }
+                        ],
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"refresh_token\": \"{{factus_refresh_token}}\"\n}",
@@ -142,26 +105,27 @@
             "name": "Lookups",
             "item": [
                 {
-                    "name": "Get Numbering Ranges",
+                    "name": "Get Reference Tables",
                     "request": {
                         "method": "GET",
                         "header": [
                             {
-                                "key": "X-Factus-Token",
-                                "value": "{{factus_token}}",
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
                                 "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/lookups/numbering-ranges",
+                            "raw": "{{base_url}}/lookups/reference-tables",
                             "host": [
                                 "{{base_url}}"
                             ],
                             "path": [
                                 "lookups",
-                                "numbering-ranges"
+                                "reference-tables"
                             ]
-                        }
+                        },
+                        "description": "Retorna todas las tablas de referencia fijas definidas por la DIAN. No requiere X-Factus-Token."
                     }
                 },
                 {
@@ -169,6 +133,11 @@
                     "request": {
                         "method": "GET",
                         "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
                             {
                                 "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
@@ -193,6 +162,11 @@
                         "method": "GET",
                         "header": [
                             {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
                                 "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
@@ -216,6 +190,11 @@
                         "method": "GET",
                         "header": [
                             {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
                                 "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
@@ -234,28 +213,15 @@
                     }
                 },
                 {
-                    "name": "Get Reference Tables",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/lookups/reference-tables",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "lookups",
-                                "reference-tables"
-                            ]
-                        },
-                        "description": "Retorna todas las tablas de referencia fijas definidas por la DIAN. No requiere token de Factus."
-                    }
-                },
-                {
                     "name": "Get Countries",
                     "request": {
                         "method": "GET",
                         "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
                             {
                                 "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
@@ -276,7 +242,7 @@
                                     "key": "name",
                                     "value": "",
                                     "disabled": true,
-                                    "description": "Filtrar por nombre del pa\u00eds"
+                                    "description": "Filtrar por nombre del país"
                                 }
                             ]
                         }
@@ -288,13 +254,18 @@
                         "method": "GET",
                         "header": [
                             {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
                                 "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/lookups/acquirer?identification_document_id=3&identification_number=1399995",
+                            "raw": "{{base_url}}/lookups/acquirer?identification_document_type=CC&identification_number=1399995",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -304,18 +275,18 @@
                             ],
                             "query": [
                                 {
-                                    "key": "identification_document_id",
-                                    "value": "3",
-                                    "description": "ID del tipo de documento (ver /reference-tables)"
+                                    "key": "identification_document_type",
+                                    "value": "CC",
+                                    "description": "Código canónico del tipo de documento (CC, NIT, TI, CE, etc.)"
                                 },
                                 {
                                     "key": "identification_number",
                                     "value": "1399995",
-                                    "description": "N\u00famero de documento del adquiriente"
+                                    "description": "Número de documento del adquiriente"
                                 }
                             ]
                         },
-                        "description": "Consulta nombre y correo de un adquiriente en la DIAN. \u00datil para autocompletar datos del cliente."
+                        "description": "Consulta nombre y correo de un adquiriente en la DIAN. factus-api mapea el código canónico al ID entero de Factus internamente."
                     }
                 }
             ]
@@ -342,8 +313,8 @@
                             "script": {
                                 "exec": [
                                     "var jsonData = pm.response.json();",
-                                    "if (jsonData.success && jsonData.data) {",
-                                    "    pm.collectionVariables.set('invoice_number', jsonData.data.number);",
+                                    "if (jsonData && jsonData.number) {",
+                                    "    pm.collectionVariables.set('invoice_number', jsonData.number);",
                                     "}"
                                 ],
                                 "type": "text/javascript"
@@ -354,6 +325,11 @@
                         "method": "POST",
                         "header": [
                             {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
                                 "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
@@ -361,7 +337,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"document\": \"01\",\n    \"numbering_range_id\": 8,\n    \"reference_code\": \"{{reference_code}}\",\n    \"observation\": \"Prueba de factura\",\n    \"payment_method_code\": \"10\",\n    \"payment_form\": \"1\",\n    \"customer\": {\n        \"identification_document_id\": 3,\n        \"identification\": \"123456789\",\n        \"names\": \"Juan Perez\",\n        \"address\": \"Calle 123\",\n        \"email\": \"juan@example.com\",\n        \"phone\": \"3001234567\",\n        \"municipality_id\": 980,\n        \"legal_organization_id\": 2,\n        \"tribute_id\": 21\n    },\n    \"items\": [\n        {\n            \"code_reference\": \"PROD-001\",\n            \"name\": \"Producto de prueba\",\n            \"quantity\": 1,\n            \"price\": \"10000.00\",\n            \"discount_rate\": \"0.00\",\n            \"tax_rate\": \"19.00\",\n            \"unit_measure_id\": 70,\n            \"standard_code_id\": 1,\n            \"is_excluded\": 0,\n            \"tribute_id\": 1\n        }\n    ]\n}",
+                            "raw": "{\n    \"document\": \"invoice\",\n    \"numbering_range_id\": 8,\n    \"reference_code\": \"{{reference_code}}\",\n    \"observation\": \"Prueba de factura\",\n    \"payment_method\": \"cash_payment\",\n    \"payment_form\": \"cash\",\n    \"customer\": {\n        \"identification_document_type\": \"CC\",\n        \"identification\": \"123456789\",\n        \"names\": \"Juan Perez\",\n        \"address\": \"Calle 123\",\n        \"email\": \"juan@example.com\",\n        \"phone\": \"3001234567\",\n        \"municipality_id\": 980,\n        \"legal_organization\": \"person\",\n        \"tribute\": \"ZZ\"\n    },\n    \"items\": [\n        {\n            \"code_reference\": \"PROD-001\",\n            \"name\": \"Producto de prueba\",\n            \"quantity\": 1,\n            \"price\": \"10000.00\",\n            \"discount_rate\": \"0.00\",\n            \"tax_rate\": \"19.00\",\n            \"unit_measure\": \"94\",\n            \"standard_code\": \"1\",\n            \"is_excluded\": 0,\n            \"tribute\": \"IVA\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -386,6 +362,11 @@
                         "method": "GET",
                         "header": [
                             {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
                                 "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
@@ -408,6 +389,11 @@
                     "request": {
                         "method": "GET",
                         "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
                             {
                                 "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
@@ -433,6 +419,11 @@
                         "method": "GET",
                         "header": [
                             {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
                                 "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
@@ -457,6 +448,11 @@
                         "method": "GET",
                         "header": [
                             {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
                                 "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
@@ -480,6 +476,11 @@
                     "request": {
                         "method": "POST",
                         "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
                             {
                                 "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
@@ -514,6 +515,11 @@
                         "method": "DELETE",
                         "header": [
                             {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
                                 "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
@@ -535,7 +541,7 @@
             ]
         },
         {
-            "name": "Empresas",
+            "name": "Empresa",
             "item": [
                 {
                     "name": "Ver Empresa",
@@ -543,7 +549,12 @@
                         "method": "GET",
                         "header": [
                             {
-                                "key": "x-factus-token",
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
                             }
@@ -557,8 +568,7 @@
                                 "company"
                             ]
                         }
-                    },
-                    "response": []
+                    }
                 },
                 {
                     "name": "Actualizar Empresa",
@@ -566,19 +576,19 @@
                         "method": "PUT",
                         "header": [
                             {
-                                "key": "x-factus-token",
-                                "value": "{{factus_token}}",
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
                                 "type": "text"
                             },
                             {
-                                "key": "Content-Type",
-                                "value": "application/json",
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
                                 "type": "text"
                             }
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\\n  \"company\": null,\\n  \"names\": \"Alan\",\\n  \"surnames\": \"Turing\",\\n  \"responsibilities\": \"5\",\\n  \"economic_activity\": \"6920\",\\n  \"email\": \"email@domain.com\",\\n  \"address\": \"calle 100 #50-80\",\\n  \"trade_name\": null,\\n  \"registration_code\": null,\\n  \"phone\": \"0987654321\",\\n  \"municipality_code\": \"68872\",\\n  \"tribute_code\": \"ZZ\",\\n  \"legal_organization_code\": \"2\"\\n}",
+                            "raw": "{\n  \"company\": null,\n  \"names\": \"Alan\",\n  \"surnames\": \"Turing\",\n  \"responsibilities\": \"5\",\n  \"economic_activity\": \"6920\",\n  \"email\": \"email@domain.com\",\n  \"address\": \"calle 100 #50-80\",\n  \"trade_name\": null,\n  \"registration_code\": null,\n  \"phone\": \"0987654321\",\n  \"municipality_code\": \"68872\",\n  \"tribute_code\": \"ZZ\",\n  \"legal_organization_code\": \"2\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -594,8 +604,7 @@
                                 "company"
                             ]
                         }
-                    },
-                    "response": []
+                    }
                 },
                 {
                     "name": "Actualizar Logo de la Empresa",
@@ -603,7 +612,12 @@
                         "method": "POST",
                         "header": [
                             {
-                                "key": "x-factus-token",
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
                             }
@@ -628,21 +642,25 @@
                                 "logo"
                             ]
                         }
-                    },
-                    "response": []
+                    }
                 }
             ]
         },
         {
-            "name": "Rangos de Numeraci\u00f3n",
+            "name": "Rangos de Numeración",
             "item": [
                 {
-                    "name": "Obtener Rangos de Numeraci\u00f3n",
+                    "name": "Obtener Rangos de Numeración",
                     "request": {
                         "method": "GET",
                         "header": [
                             {
-                                "key": "x-factus-token",
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
                             }
@@ -658,7 +676,7 @@
                             "query": [
                                 {
                                     "key": "filter[document]",
-                                    "value": "21",
+                                    "value": "01",
                                     "disabled": true
                                 },
                                 {
@@ -668,8 +686,7 @@
                                 }
                             ]
                         }
-                    },
-                    "response": []
+                    }
                 },
                 {
                     "name": "Rangos asociados al software",
@@ -677,7 +694,12 @@
                         "method": "GET",
                         "header": [
                             {
-                                "key": "x-factus-token",
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
                             }
@@ -692,8 +714,7 @@
                                 "software"
                             ]
                         }
-                    },
-                    "response": []
+                    }
                 },
                 {
                     "name": "Ver Rango",
@@ -701,7 +722,12 @@
                         "method": "GET",
                         "header": [
                             {
-                                "key": "x-factus-token",
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
                             }
@@ -716,8 +742,7 @@
                                 "{{numbering_range_id}}"
                             ]
                         }
-                    },
-                    "response": []
+                    }
                 },
                 {
                     "name": "Crear Rango",
@@ -725,19 +750,19 @@
                         "method": "POST",
                         "header": [
                             {
-                                "key": "x-factus-token",
-                                "value": "{{factus_token}}",
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
                                 "type": "text"
                             },
                             {
-                                "key": "Content-Type",
-                                "value": "application/json",
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
                                 "type": "text"
                             }
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\\n  \\\"document\\\": \\\"21\\\",\\n  \\\"prefix\\\": \\\"FV\\\",\\n  \\\"current\\\": 1,\\n  \\\"resolution_number\\\": \\\"d3kd93kd39jd92\\\"\\n}",
+                            "raw": "{\n  \"document\": \"01\",\n  \"prefix\": \"FV\",\n  \"current\": 1,\n  \"resolution_number\": \"d3kd93kd39jd92\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -753,8 +778,7 @@
                                 "numbering-ranges"
                             ]
                         }
-                    },
-                    "response": []
+                    }
                 },
                 {
                     "name": "Actualizar consecutivo",
@@ -762,19 +786,19 @@
                         "method": "PUT",
                         "header": [
                             {
-                                "key": "x-factus-token",
-                                "value": "{{factus_token}}",
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
                                 "type": "text"
                             },
                             {
-                                "key": "Content-Type",
-                                "value": "application/json",
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
                                 "type": "text"
                             }
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\\n  \\\"current\\\": 5\\n}",
+                            "raw": "{\n  \"current\": 5\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -791,8 +815,7 @@
                                 "{{numbering_range_id}}"
                             ]
                         }
-                    },
-                    "response": []
+                    }
                 },
                 {
                     "name": "Eliminar Rango",
@@ -800,7 +823,12 @@
                         "method": "DELETE",
                         "header": [
                             {
-                                "key": "x-factus-token",
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
                                 "value": "{{factus_token}}",
                                 "type": "text"
                             }
@@ -815,40 +843,9 @@
                                 "{{numbering_range_id}}"
                             ]
                         }
-                    },
-                    "response": []
+                    }
                 }
             ]
-        }
-    ],
-    "auth": {
-        "type": "bearer",
-        "bearer": [
-            {
-                "key": "token",
-                "value": "{{local_jwt}}",
-                "type": "string"
-            }
-        ]
-    },
-    "event": [
-        {
-            "listen": "prerequest",
-            "script": {
-                "type": "text/javascript",
-                "exec": [
-                    ""
-                ]
-            }
-        },
-        {
-            "listen": "test",
-            "script": {
-                "type": "text/javascript",
-                "exec": [
-                    ""
-                ]
-            }
         }
     ],
     "variable": [
@@ -858,8 +855,8 @@
             "type": "string"
         },
         {
-            "key": "local_jwt",
-            "value": "",
+            "key": "api_key",
+            "value": "baiji-internal-secret-key-dev-2024-change-in-production",
             "type": "string"
         },
         {
@@ -880,6 +877,11 @@
         {
             "key": "reference_code",
             "value": "FAC-001",
+            "type": "string"
+        },
+        {
+            "key": "numbering_range_id",
+            "value": "8",
             "type": "string"
         }
     ]
