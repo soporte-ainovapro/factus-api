@@ -12,7 +12,6 @@ from app.schemas.lookup import (
     Municipality,
     Tax,
     Unit,
-    NumberingRange,
     Country,
     Acquirer,
 )
