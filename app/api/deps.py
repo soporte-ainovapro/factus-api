@@ -13,6 +13,7 @@ from fastapi.security import APIKeyHeader
 from app.core.config import settings
 from app.services.interfaces import (
     InvoiceService,
+    CreditNoteService,
     AuthService,
     LookupService,
     NumberingRangeService,
@@ -46,6 +47,20 @@ def get_invoice_service() -> InvoiceService:
         )
 
         return FactusInvoiceService(base_url=settings.FACTUS_BASE_URL)
+
+    raise ValueError(
+        f"Proveedor de facturación no soportado: '{settings.BILLING_PROVIDER}'. "
+        "Valores válidos: 'factus'"
+    )
+
+
+def get_credit_note_service() -> CreditNoteService:
+    if settings.BILLING_PROVIDER == "factus":
+        from app.services.providers.factus.factus_credit_note_service import (
+            FactusCreditNoteService,
+        )
+
+        return FactusCreditNoteService(base_url=settings.FACTUS_BASE_URL)
 
     raise ValueError(
         f"Proveedor de facturación no soportado: '{settings.BILLING_PROVIDER}'. "

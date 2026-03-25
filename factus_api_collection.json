@@ -337,7 +337,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                                                         "raw": "{\n    \"document_type\": \"invoice\",\n    \"numbering_range_prefix\": \"SETP\",\n    \"reference_code\": \"{{reference_code}}\",\n    \"observation\": \"Prueba de factura\",\n    \"payment_method_code\": \"10\",\n    \"payment_form\": \"cash\",\n    \"customer\": {\n        \"document_type\": \"CC\",\n        \"identification\": \"123456789\",\n        \"names\": \"Juan Perez\",\n        \"address\": \"Calle 123\",\n        \"email\": \"juan@example.com\",\n        \"phone\": \"3001234567\",\n        \"municipality_code\": \"05001\",\n        \"organization_type\": \"person\",\n        \"tribute\": \"ZZ\"\n    },\n    \"items\": [\n        {\n            \"code_reference\": \"PROD-001\",\n            \"name\": \"Producto de prueba\",\n            \"quantity\": 1,\n            \"price\": \"10000.00\",\n            \"discount_rate\": \"0.00\",\n            \"tax_rate\": \"19.00\",\n            \"unit_measure_code\": \"94\",\n            \"standard_code\": \"1\",\n            \"is_excluded\": false,\n            \"tribute\": \"IVA\"\n        }\n    ]\n}",
+                            "raw": "{\n    \"document_type\": \"invoice\",\n    \"numbering_range_prefix\": \"SETP\",\n    \"reference_code\": \"{{reference_code}}\",\n    \"observation\": \"Prueba de factura\",\n    \"payment_method_code\": \"10\",\n    \"payment_form\": \"cash\",\n    \"customer\": {\n        \"document_type\": \"CC\",\n        \"identification\": \"123456789\",\n        \"names\": \"Juan Perez\",\n        \"address\": \"Calle 123\",\n        \"email\": \"juan@example.com\",\n        \"phone\": \"3001234567\",\n        \"municipality_code\": \"05001\",\n        \"organization_type\": \"person\",\n        \"tribute\": \"ZZ\"\n    },\n    \"items\": [\n        {\n            \"code_reference\": \"PROD-001\",\n            \"name\": \"Producto de prueba\",\n            \"quantity\": 1,\n            \"price\": \"10000.00\",\n            \"discount_rate\": \"0.00\",\n            \"tax_rate\": \"19.00\",\n            \"unit_measure_code\": \"94\",\n            \"standard_code\": \"1\",\n            \"is_excluded\": false,\n            \"tribute\": \"IVA\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -352,6 +352,41 @@
                             "path": [
                                 "invoices",
                                 ""
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List Invoices",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/invoices/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "invoices",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "filter[number]",
+                                    "value": "1",
+                                    "disabled": true
+                                }
                             ]
                         }
                     }
@@ -532,6 +567,357 @@
                             ],
                             "path": [
                                 "invoices",
+                                "reference",
+                                "{{reference_code}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Email Content",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/invoices/{{invoice_number}}/email-content",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "invoices",
+                                "{{invoice_number}}",
+                                "email-content"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Register Implicit Acceptance",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/invoices/{{invoice_number}}/implicit-acceptance",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "invoices",
+                                "{{invoice_number}}",
+                                "implicit-acceptance"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"events\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Credit Notes",
+            "item": [
+                {
+                    "name": "Create Credit Note",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/credit-notes/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "credit-notes",
+                                ""
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"numbering_range_prefix\": \"NC\",\n    \"reference_code\": \"{{reference_code}}\",\n    \"bill_id\": 123456,\n    \"correction_concept_code\": 1,\n    \"customization_id\": 20,\n    \"observation\": \"Devolución de mercancía\",\n    \"payment_method_code\": \"10\",\n    \"payment_form\": \"cash\",\n    \"customer\": {\n        \"document_type\": \"CC\",\n        \"identification\": \"123456789\",\n        \"names\": \"Juan Perez\",\n        \"address\": \"Calle 123\",\n        \"email\": \"juan@example.com\",\n        \"phone\": \"3001234567\",\n        \"municipality_code\": \"05001\",\n        \"organization_type\": \"person\",\n        \"tribute\": \"ZZ\"\n    },\n    \"items\": [\n        {\n            \"code_reference\": \"PROD-001\",\n            \"name\": \"Producto devuelto\",\n            \"quantity\": 1,\n            \"price\": \"10000.00\",\n            \"discount_rate\": \"0.00\",\n            \"tax_rate\": \"19.00\",\n            \"unit_measure_code\": \"94\",\n            \"standard_code\": \"1\",\n            \"is_excluded\": false,\n            \"tribute\": \"IVA\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "prerequest",
+                            "script": {
+                                "exec": [
+                                    "var ts = Date.now();",
+                                    "var ref = 'NC-' + ts;",
+                                    "pm.collectionVariables.set('reference_code', ref);"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        },
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var jsonData = pm.response.json();",
+                                    "if (jsonData && jsonData.number) {",
+                                    "    pm.collectionVariables.set('credit_note_number', jsonData.number);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "List Credit Notes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/credit-notes/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "credit-notes",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "filter[number]",
+                                    "value": "1",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Credit Note",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/credit-notes/{{credit_note_number}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "credit-notes",
+                                "{{credit_note_number}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Download PDF",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/credit-notes/{{credit_note_number}}/pdf",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "credit-notes",
+                                "{{credit_note_number}}",
+                                "pdf"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Download XML",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/credit-notes/{{credit_note_number}}/xml",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "credit-notes",
+                                "{{credit_note_number}}",
+                                "xml"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Email Content",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/credit-notes/{{credit_note_number}}/email-content",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "credit-notes",
+                                "{{credit_note_number}}",
+                                "email-content"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Send Email",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/credit-notes/{{credit_note_number}}/send-email",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "credit-notes",
+                                "{{credit_note_number}}",
+                                "send-email"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"destinatario@example.com\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Unvalidated",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "X-API-Key",
+                                "value": "{{api_key}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Factus-Token",
+                                "value": "{{factus_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/credit-notes/reference/{{reference_code}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "credit-notes",
                                 "reference",
                                 "{{reference_code}}"
                             ]
@@ -882,6 +1268,11 @@
         {
             "key": "numbering_range_id",
             "value": "8",
+            "type": "string"
+        },
+        {
+            "key": "credit_note_number",
+            "value": "NC914",
             "type": "string"
         }
     ]

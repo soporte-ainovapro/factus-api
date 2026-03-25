@@ -63,7 +63,12 @@ app/
 ├── api/
 │   ├── v1/
 │   │   └── routers/        # Route handlers
-│   └── deps.py             # Dependency injection
+│           ├── auth.py          # Local + Factus auth (rate-limited)
+│           ├── company.py       # Company profile management
+│           ├── credit_notes.py  # Credit Note CRUD
+│           ├── invoices.py      # Invoice CRUD
+│           ├── lookups.py       # Reference data
+│           └── numbering_ranges.py  # Numbering ranges CRUD
 ├── core/
 │   ├── config.py           # Settings (pydantic-settings)
 │   ├── exceptions.py       # Custom exceptions

@@ -60,6 +60,12 @@ class Invoice(BaseModel):
         return self
 
 
-class SendEmailRequest(BaseModel):
-    email: EmailStr
-    pdf_base_64_encoded: Optional[str] = None
+class ImplicitAcceptanceEvent(BaseModel):
+    identification_document_code: str
+    identification: str
+    dv: Optional[str] = None
+    first_name: str
+    last_name: str
+    job_title: str
+    organization_department: str
+

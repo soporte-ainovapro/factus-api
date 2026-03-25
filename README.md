@@ -9,9 +9,11 @@ REST API built with FastAPI that acts as a secure intermediary for the [Factus](
 - Company profile management (view, update, logo update)
 - Numbering Ranges management (CRUD operations)
 - Invoice creation and DIAN validation
-- PDF and XML download (base64-encoded)
-- Email delivery of validated invoices
-- Invoice event history (RADIAN)
+- Credit Note creation and DIAN validation
+- PDF and XML download (base64-encoded) for invoices and credit notes
+- Email delivery of validated documents
+- Filtering and querying capabilities
+- Invoice event history (RADIAN) and implicit acceptance
 - Reference data lookups (municipalities, taxes, units, numbering ranges, countries)
 - Static DIAN reference tables in a single endpoint (no Factus token required)
 - Acquirer lookup via DIAN — autocomplete customer data by document number
@@ -89,7 +91,7 @@ pytest --cov=app.src --cov-report=html
 
 ## Architecture
 
-```
+```text
 app/
 ├── main.py                      # FastAPI app factory
 ├── api/
@@ -113,7 +115,9 @@ app/
             ├── factus_auth_service.py
             ├── factus_code_maps.py
             ├── factus_company_service.py
+            ├── factus_document_service.py
             ├── factus_invoice_service.py
+            ├── factus_credit_note_service.py
             ├── factus_lookup_service.py
             └── factus_numbering_range_service.py
 ```
@@ -126,31 +130,47 @@ All endpoints require two headers:
 
 | Header | Value |
 |---|---|
-| `X-API-Key` | `<internal_api_key>` — clave compartida entre el backend de Baiji y este middleware |
-| `X-Factus-Token` | `<factus_access_token>` — token OAuth2 obtenido mediante `/auth/factus/login` |
+| `X-API-Key` | `<internal_api_key>` — Shared key between Baiji backend and this middleware |
+| `X-Factus-Token` | `<factus_access_token>` — OAuth2 token obtained via `/auth/factus/login` |
 
-> **Autenticación servicio a servicio**: el middleware ya **no usa** un sistema de usuarios ni emite JWT locales. La autenticación se realiza exclusivamente mediante la `FACTUS_INTERNAL_API_KEY`, que debe coincidir en el `.env` de este servicio y en el de `backend-app-baiji`.
+> **Service-to-service authentication**: The middleware **no longer uses** a user system or issues local JWTs. Authentication is performed exclusively via the `FACTUS_INTERNAL_API_KEY`, which must match in the `.env` of this service and in `backend-app-baiji`.
 
 ### Authentication
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/v1/auth/factus/login` | Autenticar contra Factus y obtener Factus Token |
-| `POST` | `/api/v1/auth/factus/refresh` | Refrescar el Factus Token |
+| `POST` | `/api/v1/auth/factus/login` | Authenticate against Factus and obtain Factus Token |
+| `POST` | `/api/v1/auth/factus/refresh` | Refresh the Factus Token |
 
 ### Invoices
 
 | Method | Path | Description |
 |---|---|---|
 | `POST` | `/api/v1/invoices/` | Create and validate an invoice (DIAN) |
+| `GET` | `/api/v1/invoices/` | List and filter invoices |
 | `GET` | `/api/v1/invoices/{number}` | Get invoice details |
 | `GET` | `/api/v1/invoices/{number}/pdf` | Download PDF (base64) |
 | `GET` | `/api/v1/invoices/{number}/xml` | Download XML (base64) |
 | `GET` | `/api/v1/invoices/{number}/events` | Get RADIAN events |
+| `GET` | `/api/v1/invoices/{number}/email-content` | Get email delivery content for invoice |
 | `POST` | `/api/v1/invoices/{number}/send-email` | Send invoice by email |
+| `POST` | `/api/v1/invoices/{number}/implicit-acceptance` | Register implicit acceptance |
 | `DELETE` | `/api/v1/invoices/reference/{code}` | Delete unvalidated invoice |
 
-### Company (Empresa)
+### Credit Notes
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/v1/credit-notes/` | Create and validate a credit note (DIAN) |
+| `GET` | `/api/v1/credit-notes/` | List and filter credit notes |
+| `GET` | `/api/v1/credit-notes/{number}` | Get credit note details |
+| `GET` | `/api/v1/credit-notes/{number}/pdf` | Download PDF (base64) |
+| `GET` | `/api/v1/credit-notes/{number}/xml` | Download XML (base64) |
+| `GET` | `/api/v1/credit-notes/{number}/email-content` | Get email delivery content for credit note |
+| `POST` | `/api/v1/credit-notes/{number}/send-email` | Send credit note by email |
+| `DELETE` | `/api/v1/credit-notes/reference/{code}` | Delete unvalidated credit note |
+
+### Company Profile
 
 | Method | Path | Description |
 |---|---|---|
@@ -158,7 +178,7 @@ All endpoints require two headers:
 | `PUT` | `/api/v1/company` | Update user company profile |
 | `POST` | `/api/v1/company/logo` | Update user company logo |
 
-### Numbering Ranges (Rangos de Numeración)
+### Numbering Ranges
 
 | Method | Path | Description |
 |---|---|---|
@@ -188,13 +208,13 @@ Returns all fixed catalog tables defined by the DIAN in a single request. No Fac
 
 | Table key | Description |
 |---|---|
-| `identification_document_types` | IDs 1–11 (Cédula, NIT, Pasaporte, etc.) |
-| `legal_organization_types` | Persona Jurídica / Persona Natural |
-| `customer_tribute_types` | IVA / No aplica (with `id`, `code`, `name`) |
-| `payment_methods` | Efectivo, Tarjeta, Transferencia, etc. |
-| `payment_forms` | Pago de contado / Pago a crédito |
-| `product_standard_codes` | UNSPSC, GTIN, Partida Arancelaria, etc. |
-| `document_types` | 01 Factura electrónica / 03 Contingencia tipo 03 |
+| `identification_document_types` | IDs 1–11 (National ID, NIT, Passport, etc.) |
+| `legal_organization_types` | Legal Entity / Natural Person |
+| `customer_tribute_types` | VAT / Not applicable (with `id`, `code`, `name`) |
+| `payment_methods` | Cash, Credit Card, Bank Transfer, etc. |
+| `payment_forms` | Cash Payment / Credit Payment |
+| `product_standard_codes` | UNSPSC, GTIN, Tariff Heading, etc. |
+| `document_types` | 01 Electronic Invoice / 03 Contingency type 03 |
 
 #### `/lookups/acquirer`
 
@@ -204,14 +224,16 @@ Query params: `identification_document_type` (string, e.g. `CC`, `NIT`, `TI`) an
 
 ### Response format
 
-All endpoints (except `POST /auth/login`) return the raw JSON model directly. For example, creating an invoice returns:
+All endpoints (except `POST /auth/login`) return the raw JSON model directly. For example, creating an invoice or credit note returns a `DocumentResult`:
 
 ```json
 {
-  "sale_id": 1,
-  "sale_number": "VEN-0001",
-  "factus_invoice_number": "SETP990000001",
-  ...
+  "number": "SETP990000001",
+  "prefix": "SETP",
+  "cufe": "551ad63b123...",
+  "qr_url": "https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=...",
+  "status": "1",
+  "message": "Success"
 }
 ```
 
@@ -219,7 +241,7 @@ On error:
 
 ```json
 {
-  "detail": "Error al crear la factura: El campo id rango de numeración es inválido."
+  "detail": "Error creating invoice: The numbering range id field is invalid."
 }
 ```
 
@@ -231,9 +253,9 @@ Import `factus_api_collection.json` to get a ready-to-use collection.
 
 1. Run **Factus Login** — saves `factus_token` and `factus_refresh_token` automatically.
    - Requires `X-API-Key` header (configured in `FACTUS_INTERNAL_API_KEY` variable).
-2. Run any **Invoices** or **Lookups** request.
+2. Run any **Invoices**, **Credit Notes**, or **Lookups** request.
 
-The **Create Invoice** request generates a unique `reference_code` (timestamp-based) on every run via a pre-request script, preventing 409 duplicate conflicts. The returned `invoice_number` is automatically saved to `{{invoice_number}}` for use in subsequent requests (Get, PDF, XML, Email, Events).
+The **Create Invoice** and **Create Credit Note** requests generate unique `reference_code` (timestamp-based) on every run via a pre-request script, preventing duplicate conflicts. The returned `number` is automatically saved to `{{invoice_number}}` or `{{credit_note_number}}` for use in subsequent requests (Get, PDF, XML, Email, Events).
 
 ## Sandbox credentials
 

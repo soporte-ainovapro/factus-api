@@ -59,3 +59,5 @@ class ReferenceTables(BaseModel):
     payment_forms: List[ReferenceEntry]
     product_standard_codes: List[ReferenceEntryInt]
     document_types: List[ReferenceEntry]
+    credit_note_correction_concepts: List[ReferenceEntry]
+    credit_note_operation_types: List[ReferenceEntry]

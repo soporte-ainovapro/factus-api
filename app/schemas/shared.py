@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import date
 from decimal import Decimal
@@ -24,3 +24,7 @@ class AllowanceCharge(BaseModel):
     reason: str
     base_amount: Decimal
     amount: Decimal
+
+class SendEmailRequest(BaseModel):
+    email: EmailStr
+    pdf_base_64_encoded: Optional[str] = None

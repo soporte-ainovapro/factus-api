@@ -10,9 +10,10 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 
 
-class InvoiceResult(BaseModel):
-    """Resultado de emitir una factura electrónica."""
+class DocumentResult(BaseModel):
+    """Resultado de emitir una factura electrónica u otro documento."""
 
+    id: Optional[str] = None
     number: str
     prefix: str
     cufe: str
@@ -29,7 +30,7 @@ class DownloadResult(BaseModel):
     extension: str  # "pdf" o "xml"
 
 
-class InvoiceDataResult(BaseModel):
+class DocumentDataResult(BaseModel):
     """Datos completos de una factura consultada."""
 
     status: str
@@ -37,14 +38,14 @@ class InvoiceDataResult(BaseModel):
     data: Dict[str, Any]
 
 
-class DeleteInvoiceResult(BaseModel):
+class DeleteDocumentResult(BaseModel):
     """Resultado de eliminar una factura no validada."""
 
     status: str
     message: str
 
 
-class InvoiceEvent(BaseModel):
+class DocumentEvent(BaseModel):
     """Evento RADIAN asociado a una factura."""
 
     number: str
@@ -55,9 +56,9 @@ class InvoiceEvent(BaseModel):
     effective_time: str
 
 
-class InvoiceEventsResult(BaseModel):
+class DocumentEventsResult(BaseModel):
     """Lista de eventos RADIAN de una factura."""
 
     status: str
     message: Optional[str] = None
-    data: List[InvoiceEvent]
+    data: List[DocumentEvent]

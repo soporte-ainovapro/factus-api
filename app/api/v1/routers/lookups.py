@@ -68,6 +68,18 @@ _REFERENCE_TABLES = ReferenceTables(
             code="03", name="Instrumento electrónico de transmisión - tipo 03"
         ),
     ],
+    credit_note_correction_concepts=[
+        ReferenceEntry(code="1", name="Devolución parcial de los bienes y/o no aceptación parcial del servicio"),
+        ReferenceEntry(code="2", name="Anulación de factura electrónica"),
+        ReferenceEntry(code="3", name="Rebaja o descuento parcial o total"),
+        ReferenceEntry(code="4", name="Ajuste de precio"),
+        ReferenceEntry(code="5", name="Descuento comercial por pronto pago"),
+        ReferenceEntry(code="6", name="Descuento comercial por volumen de ventas"),
+    ],
+    credit_note_operation_types=[
+        ReferenceEntry(code="20", name="Nota Crédito que referencia una factura electrónica"),
+        ReferenceEntry(code="22", name="Nota Crédito sin referencia a una factura electrónica"),
+    ]
 )
 
 
