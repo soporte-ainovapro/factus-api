@@ -12,6 +12,11 @@ class RelatedDocument(BaseModel):
     issue_date: date
     number: str
 
+class BillingReference(BaseModel):
+    number: str
+    uuid: str
+    issue_date: date
+
 class BillingPeriod(BaseModel):
     start_date: date
     start_time: Optional[str] = None

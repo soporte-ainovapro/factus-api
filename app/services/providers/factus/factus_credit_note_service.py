@@ -29,6 +29,7 @@ class FactusCreditNoteService(FactusBaseDocumentService):
             "bill_id": credit_note.bill_id,
             "payment_form": PAYMENT_FORM_TO_FACTUS_CODE[credit_note.payment_form.value] if hasattr(credit_note.payment_form, "value") else PAYMENT_FORM_TO_FACTUS_CODE[credit_note.payment_form],
             "payment_method_code": pm_code,
+            "operation_type_id": credit_note.operation_type or "20",
         }
 
         if credit_note.observation:
@@ -60,6 +61,13 @@ class FactusCreditNoteService(FactusBaseDocumentService):
                 }
                 for ac in credit_note.allowance_charges
             ]
+
+        if credit_note.billing_reference:
+            payload["billing_reference"] = {
+                "number": credit_note.billing_reference.number,
+                "uuid": credit_note.billing_reference.uuid,
+                "issue_date": credit_note.billing_reference.issue_date.isoformat(),
+            }
 
         payload["customer"] = await self._map_customer(credit_note, token)
         payload["items"] = self._map_items(credit_note)

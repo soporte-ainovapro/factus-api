@@ -19,6 +19,7 @@ DOCUMENT_TYPE_TO_FACTUS_ID: dict[str, int] = {
     "PEP": 9,  # PEP
     "NIT_EXTRANJERO": 10,  # NIT de otro país
     "NUIP": 11,  # NUIP
+    "CONS_FINAL": 13, # Consumidor Final
 }
 
 # Tipo de organización legal: código canónico → ID entero de Factus

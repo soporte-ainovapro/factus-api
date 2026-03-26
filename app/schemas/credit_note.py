@@ -8,6 +8,7 @@ from app.schemas.item import Item
 from app.schemas.shared import (
     BillingPeriod,
     AllowanceCharge,
+    BillingReference,
 )
 from app.schemas.enums import PaymentForm
 
@@ -30,6 +31,7 @@ class CreditNote(BaseModel):
         default=20, 
         description="ID del tipo de operación (20 para Nota Crédito genérica, 22 para sin referencia a facturas)"
     )
+    operation_type: Optional[str] = None
 
     observation: Optional[str] = Field(default=None, max_length=250)
 
@@ -45,6 +47,8 @@ class CreditNote(BaseModel):
     billing_period: Optional[BillingPeriod] = None
     establishment: Optional[Establishment] = None
     allowance_charges: Optional[List[AllowanceCharge]] = None
+
+    billing_reference: Optional[BillingReference] = None
 
     customer: Customer
     items: List[Item]
