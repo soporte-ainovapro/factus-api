@@ -12,14 +12,14 @@ from app.schemas.numbering_range import (
     NumberingRangeSoftwareResponse,
 )
 from app.services.interfaces import NumberingRangeService
-from app.api.deps import verify_api_key, get_numbering_range_service
+from app.api.deps import get_factus_token, verify_api_key, get_numbering_range_service
 
 router = APIRouter()
 
 
 @router.get("/", response_model=List[NumberingRange])
 async def get_numbering_ranges(
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     id: Optional[int] = Query(None, description="Filtrar por id"),
     document: Optional[str] = Query(None, description="Filtrar por documento"),
     resolution_number: Optional[str] = Query(
@@ -50,7 +50,7 @@ async def get_numbering_ranges(
 
 @router.get("/software", response_model=List[NumberingRangeSoftware])
 async def get_software_numbering_ranges(
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: NumberingRangeService = Depends(get_numbering_range_service),
     _: str = Depends(verify_api_key),
 ):
@@ -66,7 +66,7 @@ async def get_software_numbering_ranges(
 @router.get("/{id}", response_model=NumberingRange)
 async def get_numbering_range(
     id: int,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: NumberingRangeService = Depends(get_numbering_range_service),
     _: str = Depends(verify_api_key),
 ):
@@ -82,7 +82,7 @@ async def get_numbering_range(
 @router.post("/", response_model=NumberingRange)
 async def create_numbering_range(
     range_data: NumberingRangeCreate,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: NumberingRangeService = Depends(get_numbering_range_service),
     _: str = Depends(verify_api_key),
 ):
@@ -99,7 +99,7 @@ async def create_numbering_range(
 async def update_numbering_range_consecutive(
     id: int,
     update_data: NumberingRangeUpdate,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: NumberingRangeService = Depends(get_numbering_range_service),
     _: str = Depends(verify_api_key),
 ):
@@ -117,7 +117,7 @@ async def update_numbering_range_consecutive(
 @router.delete("/{id}", response_model=dict)
 async def delete_numbering_range(
     id: int,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: NumberingRangeService = Depends(get_numbering_range_service),
     _: str = Depends(verify_api_key),
 ):

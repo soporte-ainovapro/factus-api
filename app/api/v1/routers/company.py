@@ -6,14 +6,14 @@ from app.schemas.company import (
     LogoData,
 )
 from app.services.interfaces import CompanyService
-from app.api.deps import verify_api_key, get_company_service
+from app.api.deps import get_factus_token, verify_api_key, get_company_service
 
 router = APIRouter()
 
 
 @router.get("/", response_model=CompanyData)
 async def get_company(
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: CompanyService = Depends(get_company_service),
     _: str = Depends(verify_api_key),
 ):
@@ -29,7 +29,7 @@ async def get_company(
 @router.put("/", response_model=CompanyData)
 async def update_company(
     company: CompanyUpdate,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: CompanyService = Depends(get_company_service),
     _: str = Depends(verify_api_key),
 ):
@@ -45,7 +45,7 @@ async def update_company(
 @router.post("/logo", response_model=LogoData)
 async def update_company_logo(
     image: UploadFile = File(...),
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: CompanyService = Depends(get_company_service),
     _: str = Depends(verify_api_key),
 ):

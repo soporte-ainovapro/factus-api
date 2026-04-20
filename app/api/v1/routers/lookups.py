@@ -12,7 +12,7 @@ from app.schemas.lookup import (
     ReferenceEntryInt,
 )
 from app.services.interfaces import LookupService
-from app.api.deps import verify_api_key, get_lookup_service
+from app.api.deps import get_factus_token, verify_api_key, get_lookup_service
 
 router = APIRouter()
 
@@ -96,7 +96,7 @@ async def get_reference_tables(_: str = Depends(verify_api_key)):
 
 @router.get("/municipalities", response_model=List[Municipality])
 async def get_municipalities(
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: LookupService = Depends(get_lookup_service),
     _: str = Depends(verify_api_key),
 ):
@@ -111,7 +111,7 @@ async def get_municipalities(
 
 @router.get("/taxes", response_model=List[Tax])
 async def get_taxes(
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: LookupService = Depends(get_lookup_service),
     _: str = Depends(verify_api_key),
 ):
@@ -126,7 +126,7 @@ async def get_taxes(
 
 @router.get("/units", response_model=List[Unit])
 async def get_units(
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: LookupService = Depends(get_lookup_service),
     _: str = Depends(verify_api_key),
 ):
@@ -141,7 +141,7 @@ async def get_units(
 
 @router.get("/countries", response_model=List[Country])
 async def get_countries(
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     name: Optional[str] = Query(None, description="Filtrar por nombre del país"),
     service: LookupService = Depends(get_lookup_service),
     _: str = Depends(verify_api_key),
@@ -157,7 +157,7 @@ async def get_countries(
 
 @router.get("/acquirer", response_model=Acquirer)
 async def get_acquirer(
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     identification_document_type: str = Query(
         ...,
         description=(

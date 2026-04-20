@@ -15,7 +15,7 @@ from app.schemas.results import (
 from app.schemas.invoice import ImplicitAcceptanceEvent
 from app.schemas.shared import SendEmailRequest
 from app.services.interfaces import InvoiceService
-from app.api.deps import verify_api_key, get_invoice_service
+from app.api.deps import get_factus_token, verify_api_key, get_invoice_service
 
 router = APIRouter()
 
@@ -25,7 +25,7 @@ router = APIRouter()
 @router.post("/", response_model=DocumentResult)
 async def create_invoice(
     invoice: Invoice,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
@@ -39,7 +39,7 @@ async def create_invoice(
 
 @router.get("/", response_model=DocumentDataResult)
 async def get_invoices(
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     filter_number: Optional[str] = Query(None, alias="filter[number]"),
     filter_reference_code: Optional[str] = Query(None, alias="filter[reference_code]"),
     filter_identification: Optional[str] = Query(None, alias="filter[identification]"),
@@ -71,7 +71,7 @@ async def get_invoices(
 @router.get("/{number}/pdf", response_model=DownloadResult)
 async def get_pdf(
     number: str,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
@@ -86,7 +86,7 @@ async def get_pdf(
 @router.get("/{number}/xml", response_model=DownloadResult)
 async def get_xml(
     number: str,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
@@ -101,7 +101,7 @@ async def get_xml(
 @router.get("/{number}/events", response_model=List[DocumentEvent])
 async def get_invoice_events(
     number: str,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
@@ -117,7 +117,7 @@ async def get_invoice_events(
 @router.get("/{number}", response_model=Dict[str, Any])
 async def get_invoice(
     number: str,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
@@ -133,7 +133,7 @@ async def get_invoice(
 @router.delete("/reference/{reference_code}", response_model=DeleteDocumentResult)
 async def delete_invoice(
     reference_code: str,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
@@ -149,7 +149,7 @@ async def delete_invoice(
 async def send_email(
     number: str,
     request: SendEmailRequest,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
@@ -165,7 +165,7 @@ async def send_email(
 @router.get("/{number}/email-content", response_model=Dict[str, Any])
 async def get_email_content(
     number: str,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):
@@ -182,7 +182,7 @@ async def get_email_content(
 async def register_implicit_acceptance(
     number: str,
     event_data: ImplicitAcceptanceEvent,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: InvoiceService = Depends(get_invoice_service),
     _: str = Depends(verify_api_key),
 ):

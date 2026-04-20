@@ -20,7 +20,15 @@ from app.services.interfaces import (
     CompanyService,
 )
 
+from app.core.token_manager import token_manager
+
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
+
+
+async def get_factus_token() -> str:
+    """Dependency to get the autonomous Factus token."""
+    return await token_manager.get_token()
+
 
 
 async def verify_api_key(api_key: str = Security(api_key_header)) -> str:

@@ -12,14 +12,14 @@ from app.schemas.results import (
 )
 from app.schemas.shared import SendEmailRequest
 from app.services.interfaces import CreditNoteService
-from app.api.deps import verify_api_key, get_credit_note_service
+from app.api.deps import get_factus_token, verify_api_key, get_credit_note_service
 
 router = APIRouter()
 
 @router.post("/", response_model=DocumentResult)
 async def create_credit_note(
     credit_note: CreditNote,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: CreditNoteService = Depends(get_credit_note_service),
     _: str = Depends(verify_api_key),
 ):
@@ -39,7 +39,7 @@ async def get_credit_notes(
     prefix: Optional[str] = None,
     reference_code: Optional[str] = None,
     status: Optional[int] = None,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: CreditNoteService = Depends(get_credit_note_service),
     _: str = Depends(verify_api_key),
 ):
@@ -62,7 +62,7 @@ async def get_credit_notes(
 @router.get("/{number}", response_model=Dict[str, Any])
 async def get_credit_note(
     number: str,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: CreditNoteService = Depends(get_credit_note_service),
     _: str = Depends(verify_api_key),
 ):
@@ -78,7 +78,7 @@ async def get_credit_note(
 @router.get("/{number}/pdf", response_model=DownloadResult)
 async def get_pdf(
     number: str,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: CreditNoteService = Depends(get_credit_note_service),
     _: str = Depends(verify_api_key),
 ):
@@ -93,7 +93,7 @@ async def get_pdf(
 @router.get("/{number}/xml", response_model=DownloadResult)
 async def get_xml(
     number: str,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: CreditNoteService = Depends(get_credit_note_service),
     _: str = Depends(verify_api_key),
 ):
@@ -108,7 +108,7 @@ async def get_xml(
 @router.get("/{number}/email-content", response_model=Dict[str, Any])
 async def get_email_content(
     number: str,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: CreditNoteService = Depends(get_credit_note_service),
     _: str = Depends(verify_api_key),
 ):
@@ -125,7 +125,7 @@ async def get_email_content(
 async def send_email(
     number: str,
     request: SendEmailRequest,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: CreditNoteService = Depends(get_credit_note_service),
     _: str = Depends(verify_api_key),
 ):
@@ -141,7 +141,7 @@ async def send_email(
 @router.delete("/reference/{reference_code}", response_model=DeleteDocumentResult)
 async def delete_credit_note(
     reference_code: str,
-    x_factus_token: str = Header(...),
+    x_factus_token: str = Depends(get_factus_token),
     service: CreditNoteService = Depends(get_credit_note_service),
     _: str = Depends(verify_api_key),
 ):
