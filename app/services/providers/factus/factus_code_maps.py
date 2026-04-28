@@ -47,8 +47,11 @@ CUSTOMER_TRIBUTE_TO_FACTUS_ID: dict[str, int] = {
 
 # Método de pago: código canónico -> código de Factus (string)
 PAYMENT_METHOD_TO_FACTUS_CODE: dict[str, str] = {
-    "cash_payment": "10",
+    "cash": "10",
     "transfer": "47",
+    "nequi": "47",
+    "daviplata": "47",
+    "card": "48",
     "check": "20",
     "debit_card": "49",
     "credit_card": "48",

@@ -44,8 +44,11 @@ _REFERENCE_TABLES = ReferenceTables(
         ReferenceEntry(code="ZZ", name="No aplica"),
     ],
     payment_methods=[
-        ReferenceEntry(code="cash_payment", name="Efectivo"),
+        ReferenceEntry(code="cash", name="Efectivo"),
         ReferenceEntry(code="transfer", name="Consignación / Transferencia"),
+        ReferenceEntry(code="nequi", name="Nequi"),
+        ReferenceEntry(code="daviplata", name="Daviplata"),
+        ReferenceEntry(code="card", name="Tarjeta (Crédito/Débito)"),
         ReferenceEntry(code="check", name="Cheque"),
         ReferenceEntry(code="debit_card", name="Tarjeta Débito"),
         ReferenceEntry(code="credit_card", name="Tarjeta Crédito"),
